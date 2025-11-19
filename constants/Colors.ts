@@ -1,19 +1,20 @@
-const tintColorLight = '#2f95dc';
-const tintColorDark = '#fff';
+// Paleta principal GeoFerre: café + crema
+const tintColorLight = '#8d6e63';
+const tintColorDark = '#ffccbc';
 
 export default {
   light: {
-    text: '#000',
-    background: '#fff',
+    text: '#3e2723',
+    background: '#fbe9e7',
     tint: tintColorLight,
-    tabIconDefault: '#ccc',
+    tabIconDefault: '#bcaaa4',
     tabIconSelected: tintColorLight,
   },
   dark: {
-    text: '#fff',
-    background: '#000',
+    text: '#fbe9e7',
+    background: '#3e2723',
     tint: tintColorDark,
-    tabIconDefault: '#ccc',
+    tabIconDefault: '#bcaaa4',
     tabIconSelected: tintColorDark,
   },
 };
