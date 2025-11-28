@@ -1,29 +1,30 @@
+import { useEffect } from 'react';
+import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
-export default function HomeTest() {
+import { supabase } from '@/lib/supabaseClient';
+
+export default function InitialRoute() {
+  useEffect(() => {
+    const checkSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session) {
+        router.replace('/(tabs)');
+      } else {
+        router.replace('/(auth)/login');
+      }
+    };
+
+    checkSession();
+  }, []);
+
+  // Pantalla de carga ultra simple mientras decidimos a dónde ir
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Prueba de Productos</Text>
-
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() =>
-          router.push('/productos/cc954434-cd47-435f-a35a-c2bd122c4ef8')
-        }
-      >
-        <Text style={styles.btnText}>Ver producto: Pala</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() =>
-          router.push('/productos/4d5c4181-3f22-4e30-9f2a-1d318385758b')
-        }
-      >
-        <Text style={styles.btnText}>Ver producto: Martillo</Text>
-      </TouchableOpacity>
-
+      <ActivityIndicator size="large" color="#8B5E3C" />
     </View>
   );
 }
