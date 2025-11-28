@@ -1,5 +1,16 @@
-import { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useRef, useState } from 'react';
+import {
+  Animated,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+
+import { MapaFerreterias } from '@/components/MapaFerreterias';
+import { FerreteriaSheet } from '@/components/FerreteriaSheet';
+import type { FerreteriaCercana } from '@/lib/ferreterias';
 
 const ORANGE = '#ff8a29';
 const DARK_BG = '#111827';
@@ -8,20 +19,58 @@ const CARD_BG = '#020617';
 export default function HomeScreen() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'productos' | 'ferreterias'>('productos');
+  const [selectedFerreteria, setSelectedFerreteria] = useState<FerreteriaCercana | null>(null);
+  const [nearFerreterias, setNearFerreterias] = useState<FerreteriaCercana[]>([]);
+  const sheetAnim = useRef(new Animated.Value(0)).current; // 0 = expandido, 1 = colapsado
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  const toggleSheet = () => {
+    if (selectedFerreteria) return; // si está abierto el sheet de ferretería, no mover
+
+    const next = !isCollapsed;
+    setIsCollapsed(next);
+    const target = next ? 1 : 0;
+
+    Animated.timing(sheetAnim, {
+      toValue: target,
+      duration: 220,
+      useNativeDriver: true,
+    }).start();
+  };
 
   return (
     <View style={styles.screen}>
-      {/* Zona superior: mapa (luego se reemplaza por Mapbox) */}
+      {/* Zona superior: mapa */}
       <View style={styles.mapContainer}>
-        {/* TODO: Reemplazar este placeholder por el componente real de Mapbox.
-            Ej: <MapboxGL.MapView ...> */}
-        <View style={styles.mapPlaceholder}>
-          <Text style={styles.mapText}>Aquí irá el mapa de Mapbox con las ferreterías cercanas</Text>
-        </View>
+        <MapaFerreterias
+          onFerreteriaPress={setSelectedFerreteria}
+          onFerreteriasChange={setNearFerreterias}
+          focusedFerreteria={selectedFerreteria}
+        />
       </View>
 
-      {/* Tarjeta inferior: buscador + filtros */}
-      <View style={styles.bottomCard}>
+      {/* Tarjeta inferior: buscador + filtros (bottom sheet simple) */}
+      <Animated.View
+        style={[
+          styles.bottomCard,
+          {
+            transform: [
+              {
+                translateY: sheetAnim.interpolate({
+                  inputRange: [0, 1],
+                  // 0 = expandido; ~180px abajo = queda visible la barrita justo sobre la toolbar
+                  outputRange: [0, 180],
+                }),
+              },
+            ],
+          },
+        ]}>
+        <TouchableOpacity activeOpacity={0.8} onPress={toggleSheet}>
+          <View style={styles.sheetHandleWrapper}>
+            <View style={styles.sheetHandle} />
+          </View>
+        </TouchableOpacity>
+
         <View style={styles.searchWrapper}>
           <View style={styles.searchIconCircle}>
             <Text style={styles.searchIcon}>⌕</Text>
@@ -68,11 +117,47 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.helperTextRow}>
-          <Text style={styles.helperText}>
-            Modo: {filter === 'productos' ? 'buscando materiales cercanos' : 'buscando ferreterías cercanas'}
-          </Text>
+          {filter === 'productos' ? (
+            <Text style={styles.helperText}>Modo: buscando materiales cercanos</Text>
+          ) : (
+            <Text style={styles.helperText}>Ferreterías cercanas</Text>
+          )}
         </View>
-      </View>
+
+        {filter === 'ferreterias' && (
+          <View style={styles.ferreteriasList}>
+            {nearFerreterias.length === 0 ? (
+              <Text style={styles.helperText}>No hay ferreterías cercanas en este momento.</Text>
+            ) : (
+              nearFerreterias.map((f) => (
+                <TouchableOpacity
+                  key={f.id_ferreteria}
+                  style={styles.ferreteriaItem}
+                  onPress={() => setSelectedFerreteria(f)}>
+                  <View>
+                    <Text style={styles.ferreteriaName}>{f.razon_social}</Text>
+                    <Text style={styles.ferreteriaAddress}>{f.direccion}</Text>
+                  </View>
+                  <Text style={styles.ferreteriaDistance}>{f.distancia_km.toFixed(1)} km</Text>
+                </TouchableOpacity>
+              ))
+            )}
+          </View>
+        )}
+      </Animated.View>
+      <FerreteriaSheet
+        visible={!!selectedFerreteria}
+        ferreteria={selectedFerreteria}
+        onClose={() => setSelectedFerreteria(null)}
+        onVerRuta={() => {
+          // FASE 6: aquí conectaremos con Directions API y navegación
+          console.log('Ver ruta hacia', selectedFerreteria?.razon_social);
+        }}
+        onVerCatalogo={() => {
+          // FASE futura: navegar a pantalla de catálogo por ferretería
+          console.log('Ver catálogo de', selectedFerreteria?.razon_social);
+        }}
+      />
     </View>
   );
 }
@@ -86,20 +171,11 @@ const styles = StyleSheet.create({
     flex: 1.1,
     overflow: 'hidden',
   },
-  mapPlaceholder: {
-    flex: 1,
-    backgroundColor: '#e5e7eb',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  mapText: {
-    color: '#4b5563',
-    fontSize: 14,
-    textAlign: 'center',
-    paddingHorizontal: 24,
-  },
   bottomCard: {
-    flex: 1,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: CARD_BG,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
@@ -169,5 +245,41 @@ const styles = StyleSheet.create({
   helperText: {
     color: '#9CA3AF',
     fontSize: 12,
+  },
+  sheetHandleWrapper: {
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#4b5563',
+  },
+  ferreteriasList: {
+    marginTop: 12,
+    gap: 8,
+  },
+  ferreteriaItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#374151',
+  },
+  ferreteriaName: {
+    color: '#F9FAFB',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  ferreteriaAddress: {
+    color: '#9CA3AF',
+    fontSize: 12,
+  },
+  ferreteriaDistance: {
+    color: '#E5E7EB',
+    fontSize: 13,
+    fontWeight: '500',
   },
 });
