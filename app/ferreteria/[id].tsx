@@ -94,7 +94,8 @@ export default function FerreteriaScreen() {
   if (err || !store) {
     return (
       <View style={styles.center}>
-        <Text style={styles.error}>❌ {err}</Text>
+        <Text style={styles.error}>❌ {err ?? "Error desconocido"}</Text>
+
         <TouchableOpacity style={styles.btn} onPress={() => router.back()}>
           <Text style={styles.btnText}>Volver</Text>
         </TouchableOpacity>
@@ -286,5 +287,21 @@ const styles = StyleSheet.create({
     marginBottom: 3,
     fontSize: 14
   },
+  error: {
+  color: "#EF4444",
+  fontSize: 16,
+  marginBottom: 12,
+  fontWeight: "600",
+  textAlign: "center"
+  },
+  center: {
+  flex: 1,
+  justifyContent: "center",
+  alignItems: "center",
+  backgroundColor: "#0f172a",
+  padding: 20,
+},
+
+
 
 });
