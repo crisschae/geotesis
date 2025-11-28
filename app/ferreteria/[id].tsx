@@ -1,184 +1,290 @@
 // app/ferreteria/[id].tsx
-import { useLocalSearchParams, router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Image, TouchableOpacity, Linking } from 'react-native';
+import { useLocalSearchParams, router, useNavigation } from 'expo-router';
+import { useEffect, useState, useLayoutEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
+  Image,
+  TouchableOpacity,
+  Linking,
+  Platform
+} from 'react-native';
 import { supabase } from '@/lib/supabaseClient';
-
-type Store = {
-  id: string;
-  name: string;
-  description?: string | null;
-  address?: string | null;
-  phone?: string | null;
-  lat?: number | null;
-  lng?: number | null;
-  opening_hours?: any | null;
-  rating_avg?: number | null;
-  hero_image_url?: string | null;
-};
-
-type Product = {
-  id: string;
-  name: string;
-  price: number;
-  stock?: number | null;
-  image_url?: string | null;
-  store_id: string;
-};
+import MapView, { Marker } from "react-native-maps";
 
 export default function FerreteriaScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [store, setStore] = useState<Store | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
+  const navigation = useNavigation();
+
+  const [store, setStore] = useState<any>(null);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
+  // HEADER PERSONALIZADO ⭐
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: store?.name || "Cargando…",
+      headerStyle: { backgroundColor: "#0f172a" },
+      headerTintColor: "#fff",
+      headerTitleStyle: { fontWeight: "bold" },
+    });
+  }, [store]);
+
   useEffect(() => {
     if (!id) return;
+
     const load = async () => {
       setLoading(true);
       setErr(null);
-      const { data: storeData, error: sErr } = await supabase
-        .from('stores')
-        .select('*')
-        .eq('id', id)
+
+      // 1️⃣ OBTENER FERRETERÍA
+      const { data: sData, error: sErr } = await supabase
+        .from("ferreteria")
+        .select("*")
+        .eq("id_ferreteria", id)
         .single();
 
-      if (sErr || !storeData) {
-        setErr('No se pudo cargar la ferretería.');
+      if (sErr || !sData) {
+        setErr("No se pudo cargar la ferretería");
         setLoading(false);
         return;
       }
-      setStore(storeData as Store);
+      console.log("Horario recibido:", sData.horario);
 
-      const { data: prodData } = await supabase
-        .from('products')
-        .select('*')
-        .eq('store_id', storeData.id)
-        .order('name', { ascending: true });
-      setProducts(prodData || []);
+      setStore({
+        id: sData.id_ferreteria,
+        name: sData.razon_social,
+        address: sData.direccion,
+        phone: sData.telefono,
+        lat: sData.latitud,
+        lng: sData.longitud,
+        horario: sData.horario,
+      });
+
+      // 2️⃣ OBTENER PRODUCTOS
+      const { data: pData } = await supabase
+        .from("producto")
+        .select("*")
+        .eq("id_ferreteria", sData.id_ferreteria);
+
+      setProducts(pData || []);
       setLoading(false);
     };
+
     load();
   }, [id]);
 
+  // 🟨 SKELETON LOADING PRO
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#8d6e63" />
-        <Text style={styles.muted}>Cargando ferretería…</Text>
-      </View>
+      <ScrollView style={styles.container}>
+        <View style={styles.skeletonHero} />
+        <View style={styles.skeletonText} />
+        <View style={styles.skeletonTextSmall} />
+        <View style={styles.skeletonCard} />
+      </ScrollView>
     );
   }
 
+  // ERROR
   if (err || !store) {
     return (
       <View style={styles.center}>
-        <Text style={styles.error}>❌ {err ?? 'Ferretería no encontrada'}</Text>
+        <Text style={styles.error}>❌ {err}</Text>
         <TouchableOpacity style={styles.btn} onPress={() => router.back()}>
           <Text style={styles.btnText}>Volver</Text>
         </TouchableOpacity>
       </View>
     );
   }
+  const diasOrden = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"];
 
-  const mapsUrl = store.lat != null && store.lng != null
-    ? `https://www.google.com/maps/search/?api=1&query=${store.lat},${store.lng}`
-    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.address || store.name)}`;
+  function renderHorario(horario: any) {
+    return diasOrden.map((dia) => {
+      const h = horario[dia];
+
+      const label = dia.charAt(0).toUpperCase() + dia.slice(1);
+
+      if (!h || h.abre === null) {
+        return (
+          <Text key={dia} style={styles.horarioTexto}>
+            {label}: Cerrado
+          </Text>
+        );
+      }
+
+      return (
+        <Text key={dia} style={styles.horarioTexto}>
+          {label}: {h.abre} - {h.cierra}
+        </Text>
+      );
+    });
+  }
+
+  const mapsUrl =
+    store.lat && store.lng
+      ? `https://www.google.com/maps/search/?api=1&query=${store.lat},${store.lng}`
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.address || store.name)}`;
+    
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 24 }}>
-      <Image
-        source={{ uri: store.hero_image_url || 'https://placehold.co/1200x500?text=Ferreteria' }}
-        style={styles.hero}
-      />
+    
+    <ScrollView style={styles.container}>
+      
+      {/* 🔨 HEADER FERRETERÍA */}
       <Text style={styles.title}>{store.name}</Text>
-      {store.rating_avg != null && <Text style={styles.rating}>⭐ {store.rating_avg.toFixed(1)} / 5</Text>}
-      {store.address && <Text style={styles.subtitle}>📍 {store.address}</Text>}
+      <Text style={styles.subtitle}>📍 {store.address}</Text>
 
-      <View style={styles.row}>
-        <TouchableOpacity style={styles.btn} onPress={() => Linking.openURL(mapsUrl)}>
-          <Text style={styles.btnText}>Navegar con Google Maps</Text>
-        </TouchableOpacity>
-        {store.phone && (
-          <TouchableOpacity style={[styles.btn, styles.btnGhost]} onPress={() => Linking.openURL(`tel:${store.phone}`)}>
-            <Text style={[styles.btnText, styles.btnGhostText]}>Llamar</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+      <TouchableOpacity style={styles.btn} onPress={() => Linking.openURL(mapsUrl)}>
+        <Text style={styles.btnText}>Navegar con Google Maps</Text>
+      </TouchableOpacity>
 
+      {/* 📍 MAPA SOLO EN MOBILE */}
+      {Platform.OS !== "web" && store.lat && store.lng && (
+        <MapView
+          style={styles.map}
+          initialRegion={{
+            latitude: store.lat,
+            longitude: store.lng,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          }}
+        >
+          <Marker coordinate={{ latitude: store.lat, longitude: store.lng }} />
+        </MapView>
+      )}
+
+      {/* 📝 DESCRIPCIÓN MEJORADA */}
       {store.description && (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Descripción</Text>
-          <Text style={styles.cardText}>{store.description}</Text>
+          <Text style={styles.cardText} numberOfLines={4}>
+            {store.description}
+          </Text>
         </View>
       )}
-
-      {store.opening_hours && (
+      {store.horario && (
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Horarios</Text>
-          <Text style={styles.code}>{JSON.stringify(store.opening_hours, null, 2)}</Text>
-        </View>
-      )}
+        <Text style={styles.cardTitle}>Horarios</Text>
+          {renderHorario(store.horario)}
+         </View>
+       )}
+       
 
+      {/* 🛒 PRODUCTOS */}
       <View style={styles.card}>
         <View style={styles.cardHead}>
           <Text style={styles.cardTitle}>Productos</Text>
           <Text style={styles.muted}>{products.length} ítems</Text>
         </View>
-        {products.length === 0 ? (
-          <Text style={styles.muted}>No hay productos publicados.</Text>
-        ) : (
-          <View style={styles.grid}>
-            {products.map((p) => (
-              <View key={p.id} style={styles.prod}>
-                <Image
-                  source={{ uri: p.image_url || 'https://placehold.co/600x400?text=Producto' }}
-                  style={styles.prodImg}
-                />
-                <View style={styles.prodBody}>
-                  <Text style={styles.prodTitle}>{p.name}</Text>
-                  <Text style={styles.prodPrice}>
-                    ${p.price.toLocaleString('es-CL')}
-                  </Text>
-                  {typeof p.stock === 'number' && (
-                    <Text style={styles.muted}>
-                      Stock: {p.stock > 0 ? p.stock : 'Agotado'}
-                    </Text>
-                  )}
-                </View>
+
+
+
+        <View style={styles.grid}>
+          {products.map((p) => (
+            <TouchableOpacity
+              key={p.id_producto}
+              style={styles.prod}
+              onPress={() => router.push(`/productos/${p.id_producto}`)}
+            >
+              <Image
+                source={{
+                  uri:
+                    p.imagen_url?.trim() !== ""
+                      ? p.imagen_url
+                      : "https://placehold.co/600x400?text=Imagen",
+                }}
+                style={styles.prodImg}
+              />
+              <View style={styles.prodBody}>
+                <Text numberOfLines={2} style={styles.prodTitle}>{p.nombre}</Text>
+                <Text style={styles.prodPrice}>${p.precio.toLocaleString("es-CL")}</Text>
+                <Text style={styles.muted}>Stock: {p.stock}</Text>
               </View>
-            ))}
-          </View>
-        )}
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
     </ScrollView>
   );
 }
 
+
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#111827' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#111827' },
-  hero: { width: '100%', height: 200, borderRadius: 12, marginBottom: 12 },
-  title: { color: '#fff', fontSize: 24, fontWeight: '700' },
-  subtitle: { color: '#9CA3AF', marginTop: 4 },
-  rating: { color: '#FBBF24', marginTop: 6, fontSize: 16 },
-  muted: { color: '#9CA3AF' },
-  error: { color: '#EF4444', fontSize: 16, marginBottom: 12 },
-  row: { flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' },
-  btn: { backgroundColor: '#8d6e63', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10 },
-  btnGhost: { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#8d6e63' },
-  btnText: { color: '#fff', fontWeight: '600' },
-  btnGhostText: { color: '#8d6e63' },
-  card: { marginTop: 16, padding: 14, backgroundColor: '#1f2937', borderRadius: 12, borderWidth: 1, borderColor: '#2a3443' },
-  cardHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  cardTitle: { color: '#fff', fontSize: 18, fontWeight: '600', marginBottom: 6 },
+  container: { flex: 1, padding: 16, backgroundColor: '#0f172a' },
+
+  // ⭐ SKELETON
+  skeletonHero: {
+    width: "100%",
+    height: 160,
+    borderRadius: 12,
+    backgroundColor: "#25314b",
+    marginBottom: 20
+  },
+  skeletonText: {
+    width: "60%",
+    height: 20,
+    backgroundColor: "#25314b",
+    borderRadius: 6,
+    marginBottom: 10
+  },
+  skeletonTextSmall: {
+    width: "40%",
+    height: 16,
+    backgroundColor: "#25314b",
+    borderRadius: 6,
+    marginBottom: 20
+  },
+  skeletonCard: {
+    width: "100%",
+    height: 140,
+    backgroundColor: "#25314b",
+    borderRadius: 12
+  },
+
+  // HEADER
+  title: { color: '#fff', fontSize: 28, fontWeight: '700', marginBottom: 6 },
+  subtitle: { color: '#9CA3AF', marginBottom: 12 },
+
+  // MAPA
+  map: { width: "100%", height: 200, borderRadius: 12, marginBottom: 16 },
+
+  // BOTONES
+  btn: { backgroundColor: '#8d6e63', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10, marginBottom: 16 },
+  btnText: { color: '#fff', fontWeight: '600', textAlign: 'center' },
+
+  // TARJETAS
+  card: { padding: 16, backgroundColor: '#1e293b', borderRadius: 12, marginBottom: 16 },
+  cardHead: { flexDirection: 'row', justifyContent: 'space-between' },
+  cardTitle: { color: '#fff', fontSize: 18, fontWeight: '600' },
   cardText: { color: '#D1D5DB' },
-  code: { color: '#D1D5DB', fontFamily: 'monospace' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 8 },
-  prod: { backgroundColor: '#111827', borderRadius: 10, overflow: 'hidden', width: '48%' },
-  prodImg: { width: '100%', height: 110 },
-  prodBody: { padding: 8 },
-  prodTitle: { color: '#fff', fontWeight: '600' },
-  prodPrice: { color: '#fff' },
+  muted: { color: '#9CA3AF' },
+
+  // GRID DE PRODUCTOS
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  prod: {
+    width: "47%",
+    backgroundColor: '#1f2937',
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 5,
+  },
+  prodImg: { width: '100%', height: 130, resizeMode: "cover" },
+  prodBody: { padding: 10 },
+  prodTitle: { color: '#fff', fontWeight: '600', marginBottom: 4 },
+  prodPrice: { color: '#fff', marginBottom: 2 },
+  horarioTexto: {
+    color: "#D1D5DB",
+    marginBottom: 3,
+    fontSize: 14
+  },
+
 });
