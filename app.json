@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "geoferre",
+    "name": "Geoferre",
     "slug": "geoferre",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/ferre.png",
     "scheme": "geoferre",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -22,7 +22,12 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyC-oY467D8_dZwnCkqMq6x5WmAk6o6o6o"
+        }
+      }
     },
     "web": {
       "bundler": "metro",

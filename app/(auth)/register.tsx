@@ -1,49 +1,175 @@
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import * as Location from 'expo-location';
 
 import { supabase } from '@/lib/supabaseClient';
+import type { TipoCombustible } from '@/lib/types';
 
 export default function RegisterScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [tipoCombustible, setTipoCombustible] = useState<TipoCombustible | null>(null);
+  const [rendimiento, setRendimiento] = useState('');
 
   const handleRegister = async () => {
-    if (!name || !email || !password) {
-      Alert.alert('Campos incompletos', 'Ingresa tu nombre, correo y contraseña.');
+    if (!name || !email || !password || !tipoCombustible || !rendimiento) {
+      Alert.alert(
+        'Campos incompletos',
+        'Ingresa tu nombre, correo, contraseña, tipo de combustible y rendimiento.'
+      );
       return;
     }
 
     try {
       setLoading(true);
 
-      // 1) Crear usuario en Supabase Auth
-      const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-      });
+      const emailTrim = email.trim();
+      const nameTrim = name.trim();
+      const rendimientoNum = Number.parseFloat(rendimiento.replace(',', '.'));
 
-      if (error || !data.user) {
-        Alert.alert('Error al registrarse', error?.message ?? 'Intenta nuevamente.');
+      if (!Number.isFinite(rendimientoNum) || rendimientoNum <= 0) {
+        Alert.alert('Rendimiento inválido', 'Ingresa un rendimiento en km/L mayor que 0.');
         return;
       }
 
-      // 2) Crear perfil en la tabla cliente_app
-      const { error: profileError } = await supabase.from('cliente_app').insert({
-        auth_user_id: data.user.id,
-        email: email.trim(),
-        nombre: name.trim(),
+      // 0) Obtener ubicación actual del usuario
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permiso de ubicación denegado',
+          'Necesitamos tu ubicación para calcular distancias y recomendaciones.'
+        );
+        return;
+      }
+
+      const currentPosition = await Location.getCurrentPositionAsync({});
+      const lat = currentPosition.coords.latitude;
+      const lng = currentPosition.coords.longitude;
+
+      // 1) Crear usuario en Supabase Auth (o reutilizar si ya existe)
+      let user =
+        null as NonNullable<
+          Awaited<ReturnType<typeof supabase.auth.getUser>>['data']['user']
+        > | null;
+
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: emailTrim,
+        password,
       });
 
+      if (signUpError) {
+        // Si el usuario ya existe en Auth, intentamos signIn y seguimos flujo de creación de perfiles
+        const message = signUpError.message?.toLowerCase() ?? '';
+        const alreadyExists =
+          message.includes('already registered') ||
+          message.includes('user already exists') ||
+          signUpError.status === 400;
+
+        if (!alreadyExists) {
+          Alert.alert('Error al registrarse', signUpError.message ?? 'Intenta nuevamente.');
+          return;
+        }
+
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email: emailTrim,
+          password,
+        });
+
+        if (signInError || !signInData.user) {
+          Alert.alert(
+            'Correo ya registrado',
+            'Este correo ya tiene una cuenta. Si no recuerdas la contraseña, usa la opción "Olvidé mi contraseña".'
+          );
+          return;
+        }
+
+        user = signInData.user;
+      } else {
+        user = signUpData.user;
+      }
+
+      if (!user) {
+        Alert.alert('Error al registrarse', 'No se pudo obtener la información del usuario.');
+        return;
+      }
+
+      // 2) Crear/actualizar perfil en tabla usuario (solo rol / datos generales para portal)
+      const { data: usuarioExistente } = await supabase
+        .from('usuario')
+        .select('id_usuario, rol')
+        .eq('id_usuario', user.id)
+        .maybeSingle();
+
+      let nuevoRol = 'cliente';
+      if (usuarioExistente?.rol === 'ferreteria') {
+        nuevoRol = 'ambos';
+      } else if (usuarioExistente?.rol === 'cliente' || usuarioExistente?.rol === 'ambos') {
+        nuevoRol = usuarioExistente.rol;
+      }
+
+      if (!usuarioExistente) {
+        const { error: usuarioError } = await supabase.from('usuario').insert({
+          id_usuario: user.id,
+          nombre: nameTrim,
+          email: emailTrim,
+          rol: nuevoRol,
+        });
+
+        if (usuarioError) {
+          console.log('Error insertando en usuario:', usuarioError);
+          Alert.alert(
+            'Cuenta creada con advertencia (usuario)',
+            usuarioError.message ??
+              'Se creó el usuario en Auth, pero hubo un problema guardando el perfil principal.'
+          );
+        }
+      } else if (usuarioExistente && usuarioExistente.rol !== nuevoRol) {
+        const { error: usuarioUpdateError } = await supabase
+          .from('usuario')
+          .update({ rol: nuevoRol })
+          .eq('id_usuario', user.id);
+
+        if (usuarioUpdateError) {
+          console.log('Error actualizando rol en usuario:', usuarioUpdateError);
+          Alert.alert(
+            'Advertencia (rol de usuario)',
+            usuarioUpdateError.message ??
+              'No se pudo actualizar el rol del usuario, pero la cuenta sigue siendo válida.'
+          );
+        }
+      }
+
+      // 3) Crear/actualizar perfil en la tabla cliente_app (datos móviles)
+      const { error: profileError } = await supabase
+        .from('cliente_app')
+        .upsert(
+          {
+            auth_user_id: user.id,
+            email: emailTrim,
+            nombre: nameTrim,
+            tipo_combustible: tipoCombustible,
+            rendimiento_km_l: rendimientoNum,
+            latitud: lat,
+            longitud: lng,
+          },
+          { onConflict: 'auth_user_id' }
+        );
+
       if (profileError) {
+        console.log('Error en cliente_app upsert:', profileError);
         Alert.alert(
-          'Cuenta creada con advertencia',
-          'Se creó el usuario, pero hubo un problema guardando el perfil.'
+          'Cuenta creada con advertencia (cliente)',
+          profileError.message ??
+            'Se creó el usuario, pero hubo un problema guardando el perfil de cliente.'
         );
       } else {
-        Alert.alert('Cuenta creada', 'Tu cuenta se creó correctamente. Ahora inicia sesión.');
+        Alert.alert(
+          'Cuenta lista',
+          'Tu cuenta está configurada correctamente. Ahora inicia sesión para continuar.'
+        );
       }
 
       // No dejar sesión abierta automáticamente: forzar al usuario a iniciar sesión manualmente
@@ -90,6 +216,29 @@ export default function RegisterScreen() {
           </View>
 
           <View style={styles.inputWrapper}>
+            <Text style={styles.inputLabel}>Tipo de combustible</Text>
+            <View style={styles.fuelRow}>
+              {(['93', '95', '97', 'diesel'] as TipoCombustible[]).map((tipo) => (
+                <TouchableOpacity
+                  key={tipo}
+                  style={[
+                    styles.fuelChip,
+                    tipoCombustible === tipo && styles.fuelChipActive,
+                  ]}
+                  onPress={() => setTipoCombustible(tipo)}>
+                  <Text
+                    style={[
+                      styles.fuelChipText,
+                      tipoCombustible === tipo && styles.fuelChipTextActive,
+                    ]}>
+                    {tipo === 'diesel' ? 'Diésel' : tipo}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.inputWrapper}>
             <Text style={styles.inputLabel}>Contraseña</Text>
             <TextInput
               style={styles.input}
@@ -98,6 +247,18 @@ export default function RegisterScreen() {
               secureTextEntry
               value={password}
               onChangeText={setPassword}
+            />
+          </View>
+
+          <View style={styles.inputWrapper}>
+            <Text style={styles.inputLabel}>Rendimiento (km/L)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ej: 12"
+              placeholderTextColor="#9CA3AF"
+              keyboardType="numeric"
+              value={rendimiento}
+              onChangeText={setRendimiento}
             />
           </View>
 
@@ -180,6 +341,31 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#F9FAFB',
     backgroundColor: '#020617',
+  },
+  fuelRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  fuelChip: {
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#4b5563',
+    backgroundColor: '#020617',
+  },
+  fuelChipActive: {
+    borderColor: ORANGE,
+    backgroundColor: ORANGE,
+  },
+  fuelChipText: {
+    color: '#E5E7EB',
+    fontSize: 13,
+  },
+  fuelChipTextActive: {
+    color: '#111827',
+    fontWeight: '600',
   },
   primaryButton: {
     marginTop: 8,
