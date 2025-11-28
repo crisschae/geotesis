@@ -9,7 +9,7 @@ export default function HomeTest() {
       <TouchableOpacity
         style={styles.button}
         onPress={() =>
-          router.push('/productos/d1497f9b-a8f8-4543-978e-b1a1220e3df4')
+          router.push('/productos/cc954434-cd47-435f-a35a-c2bd122c4ef8')
         }
       >
         <Text style={styles.btnText}>Ver producto: Pala</Text>
