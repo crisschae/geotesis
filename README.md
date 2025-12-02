@@ -63,6 +63,10 @@ Desde la carpeta `geoferre`:
 npm install
 ```
 
+```bash
+npm install react-native-maps
+```
+
 Esto instalará, entre otras, las siguientes dependencias clave:
 
 - **Expo** (`expo`, `expo-router`, `expo-status-bar`, etc.).
