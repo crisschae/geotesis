@@ -6,6 +6,9 @@ import {
   ScrollView,
 } from "react-native";
 import { useCartStore } from "../../services/cartStore";
+import { router } from "expo-router";
+import { useState } from "react";
+import * as WebBrowser from "expo-web-browser";
 
 export default function CartScreen() {
   const cart = useCartStore((s) => s.cart);
@@ -13,10 +16,58 @@ export default function CartScreen() {
   const decrease = useCartStore((s) => s.decreaseQuantity);
   const remove = useCartStore((s) => s.removeFromCart);
 
+  // Estado para evitar doble pago
+  const [loading, setLoading] = useState(false);
+
+  // Total del carrito
   const total = cart.reduce(
     (sum, item) => sum + item.precio * item.quantity,
     0
   );
+
+  // --- FUNCIÓN PARA INICIAR PAGO ---
+  async function iniciarPago() {
+    console.log("PASO 1: iniciarPago() fue llamado");
+
+    if (loading) return;
+    setLoading(true);
+
+    try {
+      console.log("PASO 2: preparando orderId y total");
+      const orderId = Date.now().toString();
+
+      console.log("PASO 3: enviando fetch a backend...");
+      const response = await fetch("http://192.168.18.3:5000/api/pago/crear", {
+
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId, total }),
+      });
+
+      console.log("PASO 4: fetch respondió, procesando JSON...");
+      const data = await response.json();
+
+      console.log("PASO 5: data recibida:", data);
+
+      if (!data.checkoutUrl) {
+        console.log("PASO 6: checkoutUrl no existe");
+        alert("Error creando la orden de pago");
+        setLoading(false);
+        return;
+      }
+
+      console.log("PASO 7: haciendo router.push:", data.checkoutUrl);
+      await WebBrowser.openBrowserAsync(data.checkoutUrl);
+
+    } catch (error) {
+      console.log("PASO ERROR:", error);
+      alert("No se pudo iniciar el pago");
+    }
+
+    console.log("PASO 8: finalizando iniciarPago()");
+    setLoading(false);
+  }
+
 
   return (
     <ScrollView style={{ padding: 20, marginTop: 50 }}>
@@ -24,6 +75,7 @@ export default function CartScreen() {
         Carrito ({cart.length})
       </Text>
 
+      {/* SI EL CARRITO ESTÁ VACÍO */}
       {cart.length === 0 && (
         <Text
           style={{
@@ -37,6 +89,7 @@ export default function CartScreen() {
         </Text>
       )}
 
+      {/* LISTADO DE PRODUCTOS */}
       {cart.map((item) => (
         <View
           key={item.id_producto}
@@ -100,7 +153,11 @@ export default function CartScreen() {
 
               {/* CANTIDAD */}
               <Text
-                style={{ marginHorizontal: 12, fontSize: 18, fontWeight: "600" }}
+                style={{
+                  marginHorizontal: 12,
+                  fontSize: 18,
+                  fontWeight: "600",
+                }}
               >
                 {item.quantity}
               </Text>
@@ -134,11 +191,27 @@ export default function CartScreen() {
         </View>
       ))}
 
+      {/* TOTAL Y BOTÓN PAGAR */}
       {cart.length > 0 && (
         <View style={{ marginTop: 30 }}>
           <Text style={{ fontSize: 22, fontWeight: "bold" }}>
             Total: ${total}
           </Text>
+
+          <TouchableOpacity
+            onPress={iniciarPago}
+            style={{
+              marginTop: 20,
+              backgroundColor: "#2e7d32",
+              padding: 16,
+              borderRadius: 10,
+              alignItems: "center",
+            }}
+          >
+            <Text style={{ color: "#fff", fontSize: 18, fontWeight: "bold" }}>
+              {loading ? "Procesando..." : "Pagar"}
+            </Text>
+          </TouchableOpacity>
         </View>
       )}
     </ScrollView>
