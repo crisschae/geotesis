@@ -11,6 +11,7 @@ import {
   Dimensions,
 } from "react-native";
 import { supabase } from "@/lib/supabaseClient";
+import { useCartStore } from "../../services/cartStore"; // 🟩 ZUSTAND
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -21,6 +22,9 @@ export default function ProductoScreen() {
   const { id } = useLocalSearchParams();
   const [producto, setProducto] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
+  // Zustand
+  const addToCart = useCartStore((s) => s.addToCart);
 
   // ============================
   //  FETCH PRODUCTO
@@ -54,18 +58,15 @@ export default function ProductoScreen() {
         .eq("id_producto", id)
         .single();
 
-      if (error) {
-        console.log("❌ Error en Supabase:", error);
-      }
+      if (error) console.log("❌ Error en Supabase:", error);
+
       console.log("🟦 DATA SUPABASE:", data);
-      console.log("🟨 TIPO IMAGENES:", typeof data?.imagenes);
-      console.log("🟩 IMAGENES:", data?.imagenes);
 
       setProducto(data);
     } catch (err) {
       console.log("❌ Error inesperado:", err);
     }
- 
+
     setLoading(false);
   };
 
@@ -74,30 +75,40 @@ export default function ProductoScreen() {
   }, [id]);
 
   // ============================
-  //  NORMALIZAR GALERÍA PRO
+  //  NORMALIZAR IMÁGENES PRO
   // ============================
-// ============================
-//  NORMALIZAR GALERÍA PRO (VERSIÓN FINAL)
-// ============================
-    const imagenes: string[] = (() => {
-      if (!producto) return [];
+  const imagenes: string[] = (() => {
+    if (!producto) return [];
 
-      // Caso 1: imagenes viene como array válido
-      if (Array.isArray(producto.imagenes) && producto.imagenes.length > 0) {
-        return producto.imagenes;
+    // Caso 1: ya viene array real
+    if (Array.isArray(producto.imagenes) && producto.imagenes.length > 0) {
+      return producto.imagenes;
+    }
+
+    // Caso 2: viene como JSON string
+    if (typeof producto.imagenes === "string") {
+      try {
+        const parsed = JSON.parse(producto.imagenes);
+        if (Array.isArray(parsed)) return parsed;
+      } catch {}
+    }
+
+    // Caso 3: fallback a imagen_url
+    return producto.imagen_url ? [producto.imagen_url] : [];
+  })();
+
+  // ============================
+  //  OBJETO PARA EL CARRITO
+  // ============================
+  const productForCart = producto
+    ? {
+        id_producto: producto.id_producto,
+        nombre: producto.nombre,
+        precio: producto.precio,
+        imagenes: imagenes,
+        quantity: 1,
       }
-
-      // Caso 2: imagenes viene como string JSON
-      if (typeof producto.imagenes === "string") {
-        try {
-          const parsed = JSON.parse(producto.imagenes);
-          if (Array.isArray(parsed)) return parsed;
-        } catch {}
-      }
-
-      // Caso 3: viene null → usar imagen_url
-      return producto.imagen_url ? [producto.imagen_url] : [];
-    })();
+    : null;
 
   // ============================
   //  CARGANDO
@@ -137,24 +148,21 @@ export default function ProductoScreen() {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        style={{ width: "100%", height: 350, borderRadius: 12 }}
+        style={{ width: "100%", height: 350 }}
       >
         {imagenes.map((img, index) => (
-          <Image
-            key={index}
-            source={{ uri: img }}
-            style={styles.galeriaImg}
-          />
+          <Image key={index} source={{ uri: img }} style={styles.galeriaImg} />
         ))}
       </ScrollView>
 
       {/* ====================== */}
       {/*       DETALLES         */}
       {/* ====================== */}
-
       <Text style={styles.title}>{producto.nombre}</Text>
 
-      <Text style={styles.price}>${producto.precio?.toLocaleString("es-CL")}</Text>
+      <Text style={styles.price}>
+        ${producto.precio?.toLocaleString("es-CL")}
+      </Text>
 
       {producto.stock !== null && (
         <Text style={styles.stock}>
@@ -165,6 +173,19 @@ export default function ProductoScreen() {
       {producto.descripcion && (
         <Text style={styles.descripcion}>{producto.descripcion}</Text>
       )}
+
+      {/* ====================== */}
+      {/*  BOTÓN AGREGAR CARRITO */}
+      {/* ====================== */}
+      <TouchableOpacity
+        style={styles.cartBtn}
+        onPress={() => {
+          addToCart(productForCart!);
+          router.push("/(tabs)/CartScreen");
+        }}
+      >
+        <Text style={styles.cartBtnText}>Agregar al Carrito 🛒</Text>
+      </TouchableOpacity>
 
       {/* ====================== */}
       {/*       FERRETERÍA       */}
@@ -225,11 +246,9 @@ const styles = StyleSheet.create({
   galeriaImg: {
     width: screenWidth,
     height: undefined,
-    // o cambia a según tus fotos
+    aspectRatio: 1,
     resizeMode: "cover",
   },
-
-
 
   // TEXTOS
   title: {
@@ -240,8 +259,9 @@ const styles = StyleSheet.create({
   },
   price: {
     color: "#fff",
-    fontSize: 20,
+    fontSize: 22,
     marginTop: 8,
+    fontWeight: "600",
   },
   stock: {
     color: "#9CA3AF",
@@ -251,6 +271,20 @@ const styles = StyleSheet.create({
     color: "#D1D5DB",
     marginTop: 12,
     fontSize: 16,
+  },
+
+  // BOTÓN CARRITO
+  cartBtn: {
+    backgroundColor: "#8d6e63",
+    paddingVertical: 14,
+    borderRadius: 10,
+    marginTop: 22,
+  },
+  cartBtnText: {
+    textAlign: "center",
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
   },
 
   // CARD FERRETERÍA
