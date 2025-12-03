@@ -66,6 +66,22 @@ npm install
 ```bash
 npm install react-native-maps
 ```
+Desde la carpeta `geotesis\stripe-backend`:
+
+```bash
+npm init -y
+```
+
+```bash
+npm i express cors stripe dotenv
+```
+```bash
+npm i -D nodemon
+```
+```bash
+npx expo install @stripe/stripe-react-native
+
+```
 
 Esto instalará, entre otras, las siguientes dependencias clave:
 
