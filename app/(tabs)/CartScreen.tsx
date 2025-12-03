@@ -4,68 +4,151 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
+  Alert,
 } from "react-native";
+
 import { useCartStore } from "../../services/cartStore";
-import { router } from "expo-router";
 import { useState } from "react";
-import * as WebBrowser from "expo-web-browser";
+
+import { useStripe } from "@stripe/stripe-react-native";
+import { createPaymentIntent } from "../../services/stripe";
+
+import { supabase } from "../../lib/supabaseClient";
 
 export default function CartScreen() {
   const cart = useCartStore((s) => s.cart);
   const add = useCartStore((s) => s.addToCart);
+  console.log("🛒 CARRITO:", JSON.stringify(cart, null, 2));
   const decrease = useCartStore((s) => s.decreaseQuantity);
   const remove = useCartStore((s) => s.removeFromCart);
+  const clear = useCartStore((s) => s.clearCart);
 
-  // Estado para evitar doble pago
   const [loading, setLoading] = useState(false);
 
-  // Total del carrito
+  const stripe = useStripe();
+
+  // TOTAL
   const total = cart.reduce(
-    (sum, item) => sum + item.precio * item.quantity,
+    (sum, item) => sum + item.precio * (item.quantity ?? 1),
     0
   );
 
-  // --- FUNCIÓN PARA INICIAR PAGO ---
-  async function iniciarPago() {
-    console.log("PASO 1: iniciarPago() fue llamado");
+  // Obtener cliente según auth (si lo usas)
+  async function getClienteId() {
+    const { data: { user } } = await supabase.auth.getUser();
 
-    if (loading) return;
-    setLoading(true);
+    if (!user) return null;
 
+    const { data } = await supabase
+      .from("cliente_app")
+      .select("id_cliente")
+      .eq("auth_user_id", user.id)
+      .single();
+
+    return data?.id_cliente ?? null;
+  }
+
+  // 🟦 FUNCIÓN PRINCIPAL DE PAGO
+  async function pagarConStripe() {
     try {
-      console.log("PASO 2: preparando orderId y total");
-      const orderId = Date.now().toString();
+      setLoading(true);
 
-      console.log("PASO 3: enviando fetch a backend...");
-      const response = await fetch("http://192.168.18.3:5000/api/pago/crear", {
+      // 1) Crear PaymentIntent en tu backend
+      const inicio = await createPaymentIntent(total);
+      console.log("🔥 Backend dijo:", inicio);
 
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId, total }),
+      // Guardar el paymentIntentId REAL (Stripe NO lo devuelve después)
+      const paymentIntentId = inicio.paymentIntentId;
+
+      // 2) Inicializar PaymentSheet
+      const init = await stripe.initPaymentSheet({
+        paymentIntentClientSecret: inicio.clientSecret,
+        merchantDisplayName: "GeoFerre",
+        returnURL: "geoferre://payment-return"
       });
 
-      console.log("PASO 4: fetch respondió, procesando JSON...");
-      const data = await response.json();
-
-      console.log("PASO 5: data recibida:", data);
-
-      if (!data.checkoutUrl) {
-        console.log("PASO 6: checkoutUrl no existe");
-        alert("Error creando la orden de pago");
-        setLoading(false);
+      if (init.error) {
+        Alert.alert("Error initPaymentSheet", init.error.message);
         return;
       }
 
-      console.log("PASO 7: haciendo router.push:", data.checkoutUrl);
-      await WebBrowser.openBrowserAsync(data.checkoutUrl);
+      // 3) Mostrar PaymentSheet
+      const present = await stripe.presentPaymentSheet();
 
+      if (present.error) {
+        Alert.alert("Pago cancelado", present.error.message);
+        return;
+      }
+
+      console.log("STRIPE RESULT:", present);
+      Alert.alert("Pago exitoso 🎉", "Gracias por tu compra");
+
+      // ---------- POST-PAGO EN SUPABASE ----------
+      console.log("🔥 Usando paymentIntentId:", paymentIntentId);
+
+      const clienteId = await getClienteId();
+
+      // (B) Crear pedido
+      const { data: pedido, error: errPedido } = await supabase
+        .from("pedido")
+        .insert([
+          {
+            id_ferreteria: cart[0].id_ferreteria ?? cart[0].ferreteria?.id_ferreteria ?? null,
+            id_cliente: clienteId,
+            monto_total: total,
+            estado: "pendiente",
+            gateway: "stripe"
+          },
+        ])
+        .select()
+        .single();
+
+      if (errPedido) {
+        console.log("❌ Error creando pedido:", errPedido);
+        return;
+      }
+
+      // (C) Crear detalle_pedido
+      for (const item of cart) {
+        await supabase.from("detalle_pedido").insert([
+          {
+            id_pedido: pedido.id_pedido,
+            id_producto: item.id_producto,
+            cantidad: item.quantity ?? 1,
+            precio_unitario_venta: item.precio,
+          },
+        ]);
+      }
+
+      // (D) Registrar pago
+      await supabase.from("pagos").insert([
+        {
+          id_pedido: pedido.id_pedido,
+          gateway: "stripe",
+          gateway_payment_id: paymentIntentId,
+          status: "paid",
+          raw: present,
+        },
+      ]);
+
+      // (E) Actualizar pedido como pagado
+      await supabase
+        .from("pedido")
+        .update({
+          estado: "pagado",
+          gateway_ref: paymentIntentId,
+          paid_at: new Date().toISOString(),
+        })
+        .eq("id_pedido", pedido.id_pedido);
+
+      // (F) Limpiar carrito
+      clear();
     } catch (error) {
-      console.log("PASO ERROR:", error);
-      alert("No se pudo iniciar el pago");
+      console.log("❌ ERROR STRIPE:", error);
+      Alert.alert("Error", "No se pudo procesar el pago");
+    } finally {
+      setLoading(false);
     }
-
-    console.log("PASO 8: finalizando iniciarPago()");
-    setLoading(false);
   }
 
 
@@ -75,7 +158,6 @@ export default function CartScreen() {
         Carrito ({cart.length})
       </Text>
 
-      {/* SI EL CARRITO ESTÁ VACÍO */}
       {cart.length === 0 && (
         <Text
           style={{
@@ -89,7 +171,6 @@ export default function CartScreen() {
         </Text>
       )}
 
-      {/* LISTADO DE PRODUCTOS */}
       {cart.map((item) => (
         <View
           key={item.id_producto}
@@ -124,7 +205,6 @@ export default function CartScreen() {
               Precio: ${item.precio}
             </Text>
 
-            {/* CONTROLES DE CANTIDAD */}
             <View
               style={{
                 flexDirection: "row",
@@ -132,7 +212,6 @@ export default function CartScreen() {
                 marginTop: 10,
               }}
             >
-              {/* BOTÓN - */}
               <TouchableOpacity
                 onPress={() =>
                   item.quantity === 1
@@ -151,7 +230,6 @@ export default function CartScreen() {
                 <Text style={{ fontSize: 20, fontWeight: "bold" }}>−</Text>
               </TouchableOpacity>
 
-              {/* CANTIDAD */}
               <Text
                 style={{
                   marginHorizontal: 12,
@@ -162,7 +240,6 @@ export default function CartScreen() {
                 {item.quantity}
               </Text>
 
-              {/* BOTÓN + */}
               <TouchableOpacity
                 onPress={() => add(item)}
                 style={{
@@ -179,7 +256,6 @@ export default function CartScreen() {
             </View>
           </View>
 
-          {/* BOTÓN ELIMINAR */}
           <TouchableOpacity
             onPress={() => remove(item.id_producto)}
             style={{ padding: 8, justifyContent: "center" }}
@@ -191,7 +267,6 @@ export default function CartScreen() {
         </View>
       ))}
 
-      {/* TOTAL Y BOTÓN PAGAR */}
       {cart.length > 0 && (
         <View style={{ marginTop: 30 }}>
           <Text style={{ fontSize: 22, fontWeight: "bold" }}>
@@ -199,17 +274,18 @@ export default function CartScreen() {
           </Text>
 
           <TouchableOpacity
-            onPress={iniciarPago}
+            onPress={pagarConStripe}
             style={{
               marginTop: 20,
-              backgroundColor: "#2e7d32",
+              backgroundColor: loading ? "#777" : "#2e7d32",
               padding: 16,
               borderRadius: 10,
               alignItems: "center",
             }}
+            disabled={loading}
           >
             <Text style={{ color: "#fff", fontSize: 18, fontWeight: "bold" }}>
-              {loading ? "Procesando..." : "Pagar"}
+              {loading ? "Procesando..." : "Pagar con Stripe"}
             </Text>
           </TouchableOpacity>
         </View>

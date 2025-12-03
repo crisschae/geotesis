@@ -1,12 +1,5 @@
 import { create } from "zustand";
-
-export interface Producto {
-  id_producto: string;
-  nombre: string;
-  precio: number;
-  imagenes?: string[];
-  quantity: number;
-}
+import { Producto } from "../lib/types";
 
 interface CartState {
   cart: Producto[];
@@ -19,46 +12,62 @@ interface CartState {
 export const useCartStore = create<CartState>((set, get) => ({
   cart: [],
 
-  addToCart: (product) => {
-    const cart = get().cart;
-
-    const existing = cart.find(
-      (p) => p.id_producto === product.id_producto
-    );
-
-    if (existing) {
-      const updated = cart.map((p) =>
-        p.id_producto === product.id_producto
-          ? { ...p, quantity: p.quantity + 1 }
-          : p
+  addToCart: (item) =>
+    set((state) => {
+      const existing = state.cart.find(
+        (p) => p.id_producto === item.id_producto
       );
-      return set({ cart: updated });
-    }
 
-    // quantity SIEMPRE existe ahora
-    set({ cart: [...cart, { ...product, quantity: 1 }] });
-  },
+      // 🔥 Si el producto trae ferreteria, úsala para obtener el id
+      const productoConFerreteria = {
+        ...item,
+        id_ferreteria:
+          item.id_ferreteria ??
+          item.ferreteria?.id_ferreteria ??
+          null,
+      };
 
+      if (existing) {
+        return {
+          cart: state.cart.map((p) =>
+            p.id_producto === item.id_producto
+              ? { ...p, quantity: p.quantity! + 1 }
+              : p
+          ),
+        };
+      }
 
-  removeFromCart: (id_producto) => {
-    set({
-      cart: get().cart.filter((p) => p.id_producto !== id_producto),
-    });
-  },
+      return {
+        cart: [
+          ...state.cart,
+          { ...productoConFerreteria, quantity: 1 },
+        ],
+      };
+    }),
 
-  decreaseQuantity: (id_producto) => {
-    const cart = get().cart;
+  removeFromCart: (id_producto) =>
+    set((state) => ({
+      cart: state.cart.filter((p) => p.id_producto !== id_producto),
+    })),
 
-    const updated = cart
-      .map((p) =>
-        p.id_producto === id_producto
-          ? { ...p, quantity: (p.quantity ?? 1) - 1 }
-          : p
-      )
-      .filter((p) => (p.quantity ?? 1) > 0);
+  decreaseQuantity: (id_producto) =>
+    set((state) => {
+      const item = state.cart.find((p) => p.id_producto === id_producto);
 
-    set({ cart: updated });
-  },
+      if (item && item.quantity! > 1) {
+        return {
+          cart: state.cart.map((p) =>
+            p.id_producto === id_producto
+              ? { ...p, quantity: p.quantity! - 1 }
+              : p
+          ),
+        };
+      }
+
+      return {
+        cart: state.cart.filter((p) => p.id_producto !== id_producto),
+      };
+    }),
 
   clearCart: () => set({ cart: [] }),
 }));

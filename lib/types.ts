@@ -25,30 +25,32 @@ export type Usuario = {
   rol: 'cliente' | 'ferreteria' | 'ambos';
 };
 
-export type Ferreteria = {
+export interface Ferreteria {
   id_ferreteria: string;
-  rut: string | null;
-  razon_social: string;
-  direccion: string | null;
-  latitud: number | null;
-  longitud: number | null;
-  telefono: string | null;
-  api_key: string | null;
-  horario_apertura: string | null; // time
-  horario_cierre: string | null; // time
-  estado: 'abierto' | 'cerrado';
-};
+  razon_social?: string;
+  direccion?: string;
+  telefono?: string;
+  latitud?: number;
+  longitud?: number;
+}
 
-export type Producto = {
+export interface Producto {
   id_producto: string;
-  id_ferreteria: string;
-  id_categoria: string | null;
   nombre: string;
-  descripcion: string | null;
   precio: number;
-  stock: number;
-  sku: string | null;
-};
+  imagenes?: string[];
+  descripcion?: string;
+  stock?: number;
+  sku?: string;
+
+  // 🔥 quantity opcional (solo existe cuando está en carrito)
+  quantity?: number;
+
+  // 🔥 estos son claves para pedidos
+  id_ferreteria?: string | null;
+  ferreteria?: Ferreteria | null;
+}
+
 
 export type Pedido = {
   id_pedido: string;

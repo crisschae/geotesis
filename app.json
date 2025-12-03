@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/images/ferre.png",
     "scheme": "geoferre",
+    "deepLinks": ["geoferre://"],
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -14,7 +15,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "ncom.geoferre.marketplace",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -27,7 +32,8 @@
         "googleMaps": {
           "apiKey": "AIzaSyC-oY467D8_dZwnCkqMq6x5WmAk6o6o6o"
         }
-      }
+      },
+      "package": "com.anonymous.geoferre"
     },
     "web": {
       "bundler": "metro",
@@ -39,6 +45,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "97bf6ea1-e1c1-40d9-beaa-b2d6462c70c8"
+      }
     }
   }
 }

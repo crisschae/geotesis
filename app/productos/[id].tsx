@@ -107,8 +107,13 @@ export default function ProductoScreen() {
         precio: producto.precio,
         imagenes: imagenes,
         quantity: 1,
+
+        // 🔥 AGREGAR ESTAS DOS LÍNEAS 🔥
+        id_ferreteria: producto.ferreteria?.id_ferreteria,
+        ferreteria: producto.ferreteria,
       }
     : null;
+
 
   // ============================
   //  CARGANDO

@@ -1,25 +1,32 @@
-import { supabase } from './supabaseClient';
-import type { Producto } from './types';
+import { supabase } from "./supabaseClient";
 
-export async function getProductoMasBaratoPorFerreteria(
-  id_ferreteria: string
-): Promise<Producto | null> {
+export async function fetchProductos() {
   const { data, error } = await supabase
-    .from('producto')
-    .select('*')
-    .eq('id_ferreteria', id_ferreteria)
-    .gt('stock', 0)
-    .order('precio', { ascending: true })
-    .limit(1)
-    .maybeSingle();
+    .from("producto")
+    .select(`
+      id_producto,
+      nombre,
+      descripcion,
+      precio,
+      stock,
+      imagenes,
+      sku,
+      id_ferreteria,
+      ferreteria (
+        id_ferreteria,
+        razon_social,
+        direccion,
+        telefono,
+        latitud,
+        longitud
+      )
+    `);
 
   if (error) {
-    console.log('Error buscando producto más barato:', error);
-    return null;
+    console.error("Error fetching productos:", error);
+    return [];
   }
 
-  return (data as Producto) ?? null;
+  // ❗ NO convertir a Producto[]
+  return data ?? [];
 }
-
-
-
