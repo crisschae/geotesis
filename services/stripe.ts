@@ -1,17 +1,11 @@
-const API = "http://192.168.18.3:3000"; 
+import { api } from "./api";
 
-export async function createPaymentIntent(amount: number) {
-  const r = await fetch(`${API}/stripe/create-payment-intent`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ amount }),
-  });
+type CreatePIResponse = {
+  clientSecret: string;
+  paymentIntentId: string;
+};
 
-  if (!r.ok) throw new Error("Error creando PaymentIntent");
-
-  // 👇 devolvemos TODOS los campos que devuelve el backend
-  return r.json() as Promise<{
-    clientSecret: string;
-    paymentIntentId: string;
-  }>;
+export async function createPaymentIntent(amount: number): Promise<CreatePIResponse> {
+  // amount en CENTAVOS (ej: $5.000 CLP = 500000 si CLP usa 2 decimales o según tu backend)
+  return api.post<CreatePIResponse>("/stripe/create-payment-intent", { amount });
 }
