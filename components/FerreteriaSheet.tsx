@@ -8,10 +8,36 @@ import {
   View,
 } from 'react-native';
 
+import { useRouter } from "expo-router";
+
 import { useUserLocation } from '@/hooks/useUserLocation';
 import type { FerreteriaCercana } from '@/lib/ferreterias';
 import { getProductoMasBaratoPorFerreteria } from '@/lib/productos';
 import { getDistanceUserToFerreteria } from '@/services/googleDistance';
+
+// Distancia Haversine en km (sin tocar ninguna API)
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371; // radio de la Tierra en km
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+// Modelo híbrido de velocidad según distancia (minutos aproximados)
+function estimarTiempoHibrido(distanciaKm: number) {
+  let v; // km/h
+  if (distanciaKm < 2) v = 25;        // zona urbana lenta
+  else if (distanciaKm < 10) v = 40;  // ciudad fluida
+  else if (distanciaKm < 30) v = 60;  // interurbano
+  else v = 80;                        // ruta
+  return Math.round((distanciaKm / v) * 60);
+}
+
 
 type Props = {
   visible: boolean;
@@ -26,13 +52,14 @@ export function FerreteriaSheet({
   ferreteria,
   onClose,
   onVerRuta,
-  onVerCatalogo,
 }: Props) {
   const loc = useUserLocation();
   const [loading, setLoading] = useState(false);
   const [distanceKm, setDistanceKm] = useState<number | null>(null);
   const [durationMin, setDurationMin] = useState<number | null>(null);
   const [precioMin, setPrecioMin] = useState<number | null>(null);
+
+  const router = useRouter();
 
   useEffect(() => {
     const load = async () => {
@@ -42,31 +69,36 @@ export function FerreteriaSheet({
       try {
         setLoading(true);
 
-        // 1) Distancia y tiempo reales con Google Distance Matrix
-        const dist = await getDistanceUserToFerreteria({
-          originLat: loc.location.latitude,
-          originLng: loc.location.longitude,
-          destLat: Number(ferreteria.latitud),
-          destLng: Number(ferreteria.longitud),
-        });
+        // 1) Distancia local (Haversine) como principal
+        const dLocal = haversineKm(
+          loc.location.latitude,
+          loc.location.longitude,
+          Number(ferreteria.latitud),
+          Number(ferreteria.longitud)
+        );
 
-        if (dist) {
-          setDistanceKm(dist.distanceKm);
-          setDurationMin(dist.durationMin);
-        } else {
-          setDistanceKm(ferreteria.distancia_km);
-          setDurationMin(null);
-        }
+        // si por alguna razón fallara el cálculo, usa la distancia pre-calculada del registro
+        const dKm = Number.isFinite(dLocal) && dLocal > 0
+          ? dLocal
+          : ferreteria.distancia_km;
 
-        // 2) Producto más barato de la ferretería
+        setDistanceKm(dKm);
+
+        // 2) Tiempo estimado (modelo híbrido)
+        const min = estimarTiempoHibrido(dKm);
+        setDurationMin(min);
+
+        // 3) Producto más barato (se mantiene igual)
         const prod = await getProductoMasBaratoPorFerreteria(ferreteria.id_ferreteria);
-        if (prod) {
-          setPrecioMin(prod.precio);
-        } else {
-          setPrecioMin(null);
-        }
+        setPrecioMin(prod ? prod.precio : null);
+
       } catch (e) {
         console.log('Error cargando datos del bottom sheet:', e);
+        // fallback mínimo si algo falla
+        if (ferreteria?.distancia_km != null) {
+          setDistanceKm(ferreteria.distancia_km);
+          setDurationMin(estimarTiempoHibrido(ferreteria.distancia_km));
+        }
       } finally {
         setLoading(false);
       }
@@ -75,16 +107,23 @@ export function FerreteriaSheet({
     load();
   }, [visible, ferreteria, loc.status, loc.location]);
 
+
   if (!ferreteria) return null;
 
   const distanciaTexto =
-    distanceKm != null ? `${distanceKm.toFixed(1)} km` : `${ferreteria.distancia_km.toFixed(1)} km`;
+    distanceKm != null
+      ? `${distanceKm.toFixed(1)} km`
+      : `${ferreteria.distancia_km.toFixed(1)} km`;
 
   const tiempoTexto =
-    durationMin != null ? `${Math.round(durationMin)} min aprox.` : 'Tiempo no disponible';
+    durationMin != null
+      ? `${Math.round(durationMin)} min aprox.`
+      : 'Tiempo no disponible';
 
   const precioTexto =
-    precioMin != null ? `Desde $${precioMin.toLocaleString('es-CL')}` : 'Sin productos con stock';
+    precioMin != null
+      ? `Desde $${precioMin.toLocaleString('es-CL')}`
+      : 'Sin productos con stock';
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -117,10 +156,23 @@ export function FerreteriaSheet({
           )}
 
           <View style={styles.actionsRow}>
-            <Pressable style={[styles.button, styles.secondaryButton]} onPress={onVerCatalogo}>
+            <Pressable
+              style={[styles.button, styles.secondaryButton]}
+              onPress={() => {
+                if (ferreteria?.id_ferreteria) {
+                  router.push(`/ferreteria/${ferreteria.id_ferreteria}`);
+                } else {
+                  console.warn("No hay ID de ferretería disponible");
+                }
+              }}
+            >
               <Text style={styles.secondaryButtonText}>Ver catálogo</Text>
             </Pressable>
-            <Pressable style={[styles.button, styles.primaryButton]} onPress={onVerRuta}>
+
+            <Pressable
+              style={[styles.button, styles.primaryButton]}
+              onPress={onVerRuta}
+            >
               <Text style={styles.primaryButtonText}>Ver ruta</Text>
             </Pressable>
           </View>
@@ -219,6 +271,3 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-
-
-
