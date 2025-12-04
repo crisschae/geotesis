@@ -313,7 +313,14 @@ export default function HomeScreen() {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: 12 }}
                 renderItem={({ item }) => (
-                  <View
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/productos/[id]",
+                        params: { id: item.id_producto },
+                      })
+                    }
                     style={{
                       backgroundColor: "#1f2937",
                       borderRadius: 14,
@@ -328,7 +335,10 @@ export default function HomeScreen() {
                       resizeMode="cover"
                     />
                     <View style={{ padding: 10 }}>
-                      <Text numberOfLines={1} style={{ color: "#E5E7EB", fontWeight: "600" }}>
+                      <Text
+                        numberOfLines={1}
+                        style={{ color: "#E5E7EB", fontWeight: "600" }}
+                      >
                         {item.nombre}
                       </Text>
                       <Text style={{ color: "#ff8a29", marginTop: 4 }}>
@@ -338,7 +348,7 @@ export default function HomeScreen() {
                         {item.ferreteria?.razon_social}
                       </Text>
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 )}
               />
             ) : (
@@ -348,6 +358,7 @@ export default function HomeScreen() {
             )}
           </View>
         )}
+
 
         {/* 📜 Lista ferreterías */}
         {filter === "ferreterias" && (
