@@ -13,6 +13,20 @@ interface ProductoBusqueda {
     razon_social: string;
   } | null;
 }
+function useDebounce(value: string, delay: number = 350) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => clearTimeout(timeout);
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
 
 
 
@@ -21,6 +35,17 @@ export default function SearchScreen() {
   const [busqueda, setBusqueda] = useState<string>(query?.toString() || "");
   const [resultados, setResultados] = useState<ProductoBusqueda[]>([]);
   const [loading, setLoading] = useState(false);
+  const debouncedSearch = useDebounce(busqueda, 350);
+
+  
+  //Busquedad Automática
+  useEffect(() => {
+    if (debouncedSearch.trim().length > 1) {
+      buscar(debouncedSearch);
+    }
+  }, [debouncedSearch]);
+
+
 
   // Buscar automáticamente al entrar
   useEffect(() => {
@@ -82,7 +107,7 @@ export default function SearchScreen() {
       >
         <TextInput
           value={busqueda}
-          onChangeText={setBusqueda}
+          onChangeText={(text) => setBusqueda(text)} 
           placeholder="Buscar productos..."
           placeholderTextColor="#aaa"
           style={{ flex: 1, color: "#fff" }}
