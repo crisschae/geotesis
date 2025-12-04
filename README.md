@@ -83,6 +83,21 @@ npx expo install @stripe/stripe-react-native
 
 ```
 
+
+```bash
+expo install react-native-reanimated react-native-gesture-handler
+
+```
+
+```bash
+npx expo install @react-native-async-storage/async-storage
+
+```
+```bash
+npm install axios
+
+```
+
 Esto instalará, entre otras, las siguientes dependencias clave:
 
 - **Expo** (`expo`, `expo-router`, `expo-status-bar`, etc.).
