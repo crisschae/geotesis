@@ -5,110 +5,75 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from "react-native";
-
+import { useRouter } from "expo-router";
 import { useCartStore } from "../../services/cartStore";
 import { useState } from "react";
-
 import { useStripe } from "@stripe/stripe-react-native";
 import { createPaymentIntent } from "../../services/stripe";
-
 import { supabase } from "../../lib/supabaseClient";
 
 export default function CartScreen() {
-  const cart = useCartStore((s) => s.cart);
-  const add = useCartStore((s) => s.addToCart);
-  console.log("🛒 CARRITO:", JSON.stringify(cart, null, 2));
-  const decrease = useCartStore((s) => s.decreaseQuantity);
-  const remove = useCartStore((s) => s.removeFromCart);
-  const clear = useCartStore((s) => s.clearCart);
+  const router = useRouter();
+  const { cart, addToCart, decreaseQuantity, removeFromCart, clearCart } =
+    useCartStore();
 
   const [loading, setLoading] = useState(false);
-
   const stripe = useStripe();
 
-  // TOTAL
   const total = cart.reduce(
     (sum, item) => sum + item.precio * (item.quantity ?? 1),
     0
   );
 
-  // Obtener cliente según auth (si lo usas)
   async function getClienteId() {
     const { data: { user } } = await supabase.auth.getUser();
-
     if (!user) return null;
-
     const { data } = await supabase
       .from("cliente_app")
       .select("id_cliente")
       .eq("auth_user_id", user.id)
       .single();
-
     return data?.id_cliente ?? null;
   }
 
-  // 🟦 FUNCIÓN PRINCIPAL DE PAGO
   async function pagarConStripe() {
     try {
       setLoading(true);
-
-      // 1) Crear PaymentIntent en tu backend
       const inicio = await createPaymentIntent(total);
-      console.log("🔥 Backend dijo:", inicio);
-
-      // Guardar el paymentIntentId REAL (Stripe NO lo devuelve después)
       const paymentIntentId = inicio.paymentIntentId;
 
-      // 2) Inicializar PaymentSheet
       const init = await stripe.initPaymentSheet({
         paymentIntentClientSecret: inicio.clientSecret,
         merchantDisplayName: "GeoFerre",
-        returnURL: "geoferre://payment-return"
+        returnURL: "geoferre://payment-return",
       });
 
-      if (init.error) {
-        Alert.alert("Error initPaymentSheet", init.error.message);
-        return;
-      }
+      if (init.error) throw new Error(init.error.message);
 
-      // 3) Mostrar PaymentSheet
       const present = await stripe.presentPaymentSheet();
-
-      if (present.error) {
-        Alert.alert("Pago cancelado", present.error.message);
-        return;
-      }
-
-      console.log("STRIPE RESULT:", present);
-      Alert.alert("Pago exitoso 🎉", "Gracias por tu compra");
-
-      // ---------- POST-PAGO EN SUPABASE ----------
-      console.log("🔥 Usando paymentIntentId:", paymentIntentId);
+      if (present.error) throw new Error(present.error.message);
 
       const clienteId = await getClienteId();
-
-      // (B) Crear pedido
       const { data: pedido, error: errPedido } = await supabase
         .from("pedido")
         .insert([
           {
-            id_ferreteria: cart[0].id_ferreteria ?? cart[0].ferreteria?.id_ferreteria ?? null,
+            id_ferreteria:
+              cart[0].id_ferreteria ??
+              cart[0].ferreteria?.id_ferreteria ??
+              null,
             id_cliente: clienteId,
             monto_total: total,
             estado: "pendiente",
-            gateway: "stripe"
+            gateway: "stripe",
           },
         ])
         .select()
         .single();
+      if (errPedido) throw errPedido;
 
-      if (errPedido) {
-        console.log("❌ Error creando pedido:", errPedido);
-        return;
-      }
-
-      // (C) Crear detalle_pedido
       for (const item of cart) {
         await supabase.from("detalle_pedido").insert([
           {
@@ -120,7 +85,6 @@ export default function CartScreen() {
         ]);
       }
 
-      // (D) Registrar pago
       await supabase.from("pagos").insert([
         {
           id_pedido: pedido.id_pedido,
@@ -131,7 +95,6 @@ export default function CartScreen() {
         },
       ]);
 
-      // (E) Actualizar pedido como pagado
       await supabase
         .from("pedido")
         .update({
@@ -141,140 +104,164 @@ export default function CartScreen() {
         })
         .eq("id_pedido", pedido.id_pedido);
 
-      // (F) Limpiar carrito
-      clear();
-    } catch (error) {
+      clearCart();
+      Alert.alert("🎉 Pago exitoso", "Gracias por tu compra");
+      router.replace("/"); // vuelve al home
+    } catch (error: any) {
       console.log("❌ ERROR STRIPE:", error);
-      Alert.alert("Error", "No se pudo procesar el pago");
+      Alert.alert("Error", error.message ?? "No se pudo procesar el pago");
     } finally {
       setLoading(false);
     }
   }
 
-
   return (
-    <ScrollView style={{ padding: 20, marginTop: 50 }}>
-      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 20 }}>
-        Carrito ({cart.length})
-      </Text>
-
-      {cart.length === 0 && (
-        <Text
-          style={{
-            fontSize: 18,
-            textAlign: "center",
-            marginTop: 60,
-            color: "#777",
-          }}
-        >
-          Tu carrito está vacío.
+    <View style={{ flex: 1, backgroundColor: "#f8f8f8" }}>
+      <ScrollView style={{ padding: 20, marginTop: 50 }}>
+        <Text style={{ fontSize: 26, fontWeight: "bold", marginBottom: 20 }}>
+          Carrito ({cart.length})
         </Text>
-      )}
 
-      {cart.map((item) => (
-        <View
-          key={item.id_producto}
-          style={{
-            flexDirection: "row",
-            backgroundColor: "#fff",
-            padding: 12,
-            marginVertical: 8,
-            borderRadius: 12,
-            shadowColor: "#000",
-            shadowOpacity: 0.1,
-            shadowRadius: 3,
-            elevation: 2,
-          }}
-        >
-          <Image
-            source={{ uri: item.imagenes?.[0] }}
+        {cart.length === 0 && (
+          <Text
             style={{
-              width: 80,
-              height: 80,
-              borderRadius: 10,
-              backgroundColor: "#f3f3f3",
+              fontSize: 18,
+              textAlign: "center",
+              marginTop: 60,
+              color: "#777",
             }}
-            resizeMode="contain"
-          />
+          >
+            Tu carrito está vacío.
+          </Text>
+        )}
 
-          <View style={{ marginLeft: 12, flex: 1 }}>
-            <Text style={{ fontSize: 16, fontWeight: "600" }}>
-              {item.nombre}
-            </Text>
-            <Text style={{ fontSize: 16, marginTop: 4 }}>
-              Precio: ${item.precio}
-            </Text>
-
-            <View
+        {cart.map((item) => (
+          <View
+            key={item.id_producto}
+            style={{
+              flexDirection: "row",
+              backgroundColor: "#fff",
+              padding: 12,
+              marginVertical: 8,
+              borderRadius: 14,
+              shadowColor: "#000",
+              shadowOpacity: 0.08,
+              shadowRadius: 4,
+              elevation: 2,
+            }}
+          >
+            <Image
+              source={{ uri: item.imagenes?.[0] }}
               style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginTop: 10,
+                width: 80,
+                height: 80,
+                borderRadius: 10,
+                backgroundColor: "#f3f3f3",
               }}
-            >
-              <TouchableOpacity
-                onPress={() =>
-                  item.quantity === 1
-                    ? remove(item.id_producto)
-                    : decrease(item.id_producto)
-                }
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 16,
-                  backgroundColor: "#e5e5e5",
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <Text style={{ fontSize: 20, fontWeight: "bold" }}>−</Text>
-              </TouchableOpacity>
+              resizeMode="contain"
+            />
 
-              <Text
-                style={{
-                  marginHorizontal: 12,
-                  fontSize: 18,
-                  fontWeight: "600",
-                }}
-              >
-                {item.quantity}
+            <View style={{ marginLeft: 12, flex: 1 }}>
+              <Text style={{ fontSize: 16, fontWeight: "600" }}>
+                {item.nombre}
+              </Text>
+              <Text style={{ fontSize: 16, marginTop: 4, color: "#444" }}>
+                ${item.precio}
               </Text>
 
-              <TouchableOpacity
-                onPress={() => add(item)}
+              <View
                 style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 16,
-                  backgroundColor: "#e5e5e5",
-                  justifyContent: "center",
+                  flexDirection: "row",
                   alignItems: "center",
+                  marginTop: 10,
                 }}
               >
-                <Text style={{ fontSize: 20, fontWeight: "bold" }}>+</Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() =>
+                    item.quantity === 1
+                      ? removeFromCart(item.id_producto)
+                      : decreaseQuantity(item.id_producto)
+                  }
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    backgroundColor: "#eee",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <Text style={{ fontSize: 20, fontWeight: "bold" }}>−</Text>
+                </TouchableOpacity>
+
+                <Text
+                  style={{
+                    marginHorizontal: 12,
+                    fontSize: 18,
+                    fontWeight: "600",
+                  }}
+                >
+                  {item.quantity}
+                </Text>
+
+                <TouchableOpacity
+                  onPress={() => addToCart(item)}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    backgroundColor: "#eee",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <Text style={{ fontSize: 20, fontWeight: "bold" }}>+</Text>
+                </TouchableOpacity>
+              </View>
             </View>
+
+            <TouchableOpacity
+              onPress={() => removeFromCart(item.id_producto)}
+              style={{ padding: 8, justifyContent: "center" }}
+            >
+              <Text style={{ color: "red", fontWeight: "700", fontSize: 20 }}>
+                ✕
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+      </ScrollView>
+
+      {cart.length > 0 && (
+        <View
+          style={{
+            backgroundColor: "#fff",
+            padding: 20,
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            shadowColor: "#000",
+            shadowOpacity: 0.1,
+            shadowRadius: 6,
+            elevation: 10,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <Text style={{ fontSize: 22, fontWeight: "bold" }}>
+              Total: ${total}
+            </Text>
+
+            {loading && <ActivityIndicator color="#2e7d32" size="small" />}
           </View>
 
           <TouchableOpacity
-            onPress={() => remove(item.id_producto)}
-            style={{ padding: 8, justifyContent: "center" }}
-          >
-            <Text style={{ color: "red", fontWeight: "700", fontSize: 20 }}>
-              X
-            </Text>
-          </TouchableOpacity>
-        </View>
-      ))}
-
-      {cart.length > 0 && (
-        <View style={{ marginTop: 30 }}>
-          <Text style={{ fontSize: 22, fontWeight: "bold" }}>
-            Total: ${total}
-          </Text>
-
-          <TouchableOpacity
             onPress={pagarConStripe}
+            disabled={loading}
             style={{
               marginTop: 20,
               backgroundColor: loading ? "#777" : "#2e7d32",
@@ -282,14 +269,28 @@ export default function CartScreen() {
               borderRadius: 10,
               alignItems: "center",
             }}
-            disabled={loading}
           >
             <Text style={{ color: "#fff", fontSize: 18, fontWeight: "bold" }}>
               {loading ? "Procesando..." : "Pagar con Stripe"}
             </Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={{
+              marginTop: 10,
+              backgroundColor: "#1976d2",
+              padding: 14,
+              borderRadius: 10,
+              alignItems: "center",
+            }}
+          >
+            <Text style={{ color: "#fff", fontSize: 16, fontWeight: "bold" }}>
+              Seguir comprando
+            </Text>
+          </TouchableOpacity>
         </View>
       )}
-    </ScrollView>
+    </View>
   );
 }
