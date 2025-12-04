@@ -56,6 +56,8 @@ export default function SearchScreen() {
   const [ordenPrecio, setOrdenPrecio] = useState<"asc" | "desc" | null>(null);
   const [ferreterias, setFerreterias] = useState<any[]>([]);
   const [ferreteriaSeleccionada, setFerreteriaSeleccionada] = useState<string | null>(null);
+  const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
+
 
   useEffect(() => {
     async function cargarFerreterias() {
@@ -184,150 +186,182 @@ export default function SearchScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-
-        {/* Chips de categoría */}
-        <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={{ 
+        <TouchableOpacity
+          onPress={() => setFiltrosAbiertos(!filtrosAbiertos)}
+          style={{
+            backgroundColor: "#1f2937",
+            paddingVertical: 10,
+            paddingHorizontal: 12,
+            borderRadius: 10,
+            marginBottom: 10,
+          }}
+        >
+          <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>
+            {filtrosAbiertos ? "Ocultar filtros ▲" : "Mostrar filtros ▼"}
+          </Text>
+        </TouchableOpacity>
+        {filtrosAbiertos && (
+          <View
+            style={{
+              backgroundColor: "#1f2937",
+              padding: 12,
+              borderRadius: 10,
               marginBottom: 10,
-              maxHeight:35}}
-            contentContainerStyle={{
-              paddingVertical: 1,
-              alignItems: "center",
+              gap: 12,
             }}
           >
-            {categorias.map((cat) => (
-              <TouchableOpacity
-                key={cat.id_categoria}
-                onPress={() =>
-                  setCategoriaSeleccionada(
-                    categoriaSeleccionada === cat.id_categoria
-                      ? null
-                      : cat.id_categoria
-                  )
-                }
-                style={{
-                  paddingVertical: 5,
-                  paddingHorizontal: 12,
-                  backgroundColor:
-                    categoriaSeleccionada === cat.id_categoria
-                      ? "#ff8a29"
-                      : "#1f2937",
-                  borderRadius: 20,
-                  marginRight: 8,
-                  borderWidth: 1,
-                  borderColor:
-                    categoriaSeleccionada === cat.id_categoria
-                      ? "#ff8a29"
-                      : "#374151",
-                  height: 36,
-                  justifyContent: "center",
-                }}
+            {/* Categorías */}
+            <View>
+              <Text style={{ color: "#fff", marginBottom: 5, fontWeight: "700" }}>
+                Categoría
+              </Text>
+
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: 8 }}
               >
-                <Text
+                {categorias.map((cat) => (
+                  <TouchableOpacity
+                    key={cat.id_categoria}
+                    onPress={() =>
+                      setCategoriaSeleccionada(
+                        categoriaSeleccionada === cat.id_categoria ? null : cat.id_categoria
+                      )
+                    }
+                    style={{
+                      paddingVertical: 6,
+                      paddingHorizontal: 12,
+                      backgroundColor:
+                        categoriaSeleccionada === cat.id_categoria
+                          ? "#ff8a29"
+                          : "#111827",
+                      borderRadius: 20,
+                      borderWidth: 1,
+                      borderColor:
+                        categoriaSeleccionada === cat.id_categoria ? "#ff8a29" : "#374151",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color:
+                          categoriaSeleccionada === cat.id_categoria ? "#000" : "#fff",
+                      }}
+                    >
+                      {cat.nombre}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+
+            {/* Ordenar por precio */}
+            <View>
+              <Text style={{ color: "#fff", marginBottom: 5, fontWeight: "700" }}>
+                Ordenar por
+              </Text>
+
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <TouchableOpacity
+                  onPress={() => setOrdenPrecio("asc")}
                   style={{
-                    color:
-                      categoriaSeleccionada === cat.id_categoria
-                        ? "#000"
-                        : "#fff",
-                    fontWeight: "600",
-                    fontSize: 13,
+                    paddingVertical: 6,
+                    paddingHorizontal: 12,
+                    backgroundColor: ordenPrecio === "asc" ? "#ff8a29" : "#111827",
+                    borderRadius: 20,
+                    borderWidth: 1,
+                    borderColor: ordenPrecio === "asc" ? "#ff8a29" : "#374151",
                   }}
                 >
-                  {cat.nombre}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-          {/* Ordenar por precio */}
-            <View
-              style={{
-                flexDirection: "row",
-                gap: 10,
-                marginBottom: 10,
-              }}
-  >
-    <TouchableOpacity
-      onPress={() => setOrdenPrecio("asc")}
-      style={{
-        paddingVertical: 6,
-        paddingHorizontal: 12,
-        borderRadius: 20,
-        backgroundColor: ordenPrecio === "asc" ? "#ff8a29" : "#1f2937",
-        borderWidth: 1,
-        borderColor: ordenPrecio === "asc" ? "#ff8a29" : "#374151",
-      }}
-    >
-      <Text
-        style={{
-          color: ordenPrecio === "asc" ? "#000" : "#fff",
-          fontWeight: "600",
-          fontSize: 13,
-        }}
-      >
-        Precio más bajo
-      </Text>
-    </TouchableOpacity>
+                  <Text style={{ color: ordenPrecio === "asc" ? "#000" : "#fff" }}>
+                    Precio más bajo
+                  </Text>
+                </TouchableOpacity>
 
-    <TouchableOpacity
-      onPress={() => setOrdenPrecio("desc")}
-      style={{
-        paddingVertical: 6,
-        paddingHorizontal: 12,
-        borderRadius: 20,
-        backgroundColor: ordenPrecio === "desc" ? "#ff8a29" : "#1f2937",
-        borderWidth: 1,
-        borderColor: ordenPrecio === "desc" ? "#ff8a29" : "#374151",
-      }}
-    >
-      <Text
-        style={{
-          color: ordenPrecio === "desc" ? "#000" : "#fff",
-          fontWeight: "600",
-          fontSize: 13,
-        }}
-      >
-        Precio más alto
-      </Text>
-    </TouchableOpacity>
-  </View>
-    {/* Filtro por ferretería */}
-    <View style={{ marginBottom: 10 }}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        {ferreterias.map((f) => (
-          <TouchableOpacity
-            key={f.id_ferreteria}
-            onPress={() =>
-              setFerreteriaSeleccionada(
-                ferreteriaSeleccionada === f.id_ferreteria ? null : f.id_ferreteria
-              )
-            }
-            style={{
-              paddingVertical: 6,
-              paddingHorizontal: 12,
-              borderRadius: 20,
-              marginRight: 8,
-              backgroundColor:
-                ferreteriaSeleccionada === f.id_ferreteria ? "#ff8a29" : "#1f2937",
-              borderColor:
-                ferreteriaSeleccionada === f.id_ferreteria ? "#ff8a29" : "#374151",
-              borderWidth: 1,
-            }}
-          >
-            <Text
+                <TouchableOpacity
+                  onPress={() => setOrdenPrecio("desc")}
+                  style={{
+                    paddingVertical: 6,
+                    paddingHorizontal: 12,
+                    backgroundColor: ordenPrecio === "desc" ? "#ff8a29" : "#111827",
+                    borderRadius: 20,
+                    borderWidth: 1,
+                    borderColor: ordenPrecio === "desc" ? "#ff8a29" : "#374151",
+                  }}
+                >
+                  <Text style={{ color: ordenPrecio === "desc" ? "#000" : "#fff" }}>
+                    Precio más alto
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            {/* Filtrar por Ferretería */}
+            <View>
+              <Text style={{ color: "#fff", marginBottom: 5, fontWeight: "700" }}>
+                Ferretería
+              </Text>
+
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: 8 }}
+              >
+                {ferreterias.map((f) => (
+                  <TouchableOpacity
+                    key={f.id_ferreteria}
+                    onPress={() =>
+                      setFerreteriaSeleccionada(
+                        ferreteriaSeleccionada === f.id_ferreteria ? null : f.id_ferreteria
+                      )
+                    }
+                    style={{
+                      paddingVertical: 6,
+                      paddingHorizontal: 12,
+                      backgroundColor:
+                        ferreteriaSeleccionada === f.id_ferreteria ? "#ff8a29" : "#111827",
+                      borderRadius: 20,
+                      borderWidth: 1,
+                      borderColor:
+                        ferreteriaSeleccionada === f.id_ferreteria ? "#ff8a29" : "#374151",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: ferreteriaSeleccionada === f.id_ferreteria ? "#000" : "#fff",
+                        fontWeight: "600",
+                        fontSize: 13,
+                      }}
+                    >
+                      {f.razon_social}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+
+
+            {/* Botón limpiar filtros */}
+            <TouchableOpacity
+              onPress={() => {
+                setCategoriaSeleccionada(null);
+                setOrdenPrecio(null);
+                setFerreteriaSeleccionada(null);
+                setBusqueda("");
+                buscar("");
+              }}
               style={{
-                color:
-                  ferreteriaSeleccionada === f.id_ferreteria ? "#000" : "#fff",
-                fontWeight: "600",
+                backgroundColor: "#ef4444",
+                padding: 10,
+                borderRadius: 10,
+                marginTop: 10,
               }}
             >
-              {f.razon_social}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </View>
+              <Text style={{ color: "#fff", textAlign: "center", fontWeight: "600" }}>
+                Limpiar filtros
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
 
         {loading && <ActivityIndicator size="large" color="#ff8a29" />}
