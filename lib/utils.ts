@@ -4,7 +4,7 @@ export function calcularDistanciaHaversine(
   lat2: number,
   lon2: number
 ): number {
-  const R = 6371; // radio de la Tierra en km
+  const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
@@ -14,6 +14,5 @@ export function calcularDistanciaHaversine(
       Math.sin(dLon / 2) *
       Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c; // distancia en km
+  return R * c;
 }
-

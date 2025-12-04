@@ -11,12 +11,14 @@ import {
 } from "react-native";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Image } from "react-native";
 
 import { MapaFerreterias } from "@/components/MapaFerreterias";
 import { FerreteriaSheet } from "@/components/FerreteriaSheet";
 import type { FerreteriaCercana } from "@/lib/ferreterias";
 import { useRouter } from "expo-router";
 import { getProductoMasBaratoPorFerreteria } from "@/lib/productos";
+import { getProductosCercanos } from "@/lib/productos";
 
 const ORANGE = "#ff8a29";
 const DARK_BG = "#111827";
@@ -36,6 +38,8 @@ export default function HomeScreen() {
   const [manualLocation, setManualLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [loadingRuta, setLoadingRuta] = useState(false);
   const router = useRouter();
+  const [productosCercanos, setProductosCercanos] = useState<any[]>([]);
+  const [loadingProductos, setLoadingProductos] = useState(false);
 
   // 🔹 Cargar ciudad y coordenadas guardadas
   useEffect(() => {
@@ -96,6 +100,30 @@ export default function HomeScreen() {
       setLoadingRuta(false);
     }
   };
+  // 🔹 Cargar productos cercanos según ubicación actual o manual
+  useEffect(() => {
+    const loadProductos = async () => {
+      try {
+        if (!manualLocation) return;
+        setLoadingProductos(true);
+
+        const productos = await getProductosCercanos(
+          manualLocation.latitude,
+          manualLocation.longitude,
+          10 // Radio en km
+        );
+        setProductosCercanos(productos);
+      } catch (error) {
+        console.error("Error cargando productos cercanos:", error);
+      } finally {
+        setLoadingProductos(false);
+      }
+    };
+
+    loadProductos();
+  }, [manualLocation]);
+
+
 
   return (
     <View style={styles.screen}>
@@ -189,6 +217,58 @@ export default function HomeScreen() {
             <Text style={styles.helperText}>Ferreterías cercanas</Text>
           )}
         </View>
+
+        {/* 🛒 Productos cercanos */}
+        {filter === "productos" && (
+          <View style={{ flex: 1, marginTop: 8 }}>
+            {loadingProductos ? (
+              <ActivityIndicator size="large" color="#ff8a29" />
+            ) : productosCercanos.length > 0 ? (
+              <Animated.FlatList
+                data={productosCercanos}
+                horizontal
+                keyExtractor={(item) => item.id_producto}
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 12 }}
+                renderItem={({ item }) => (
+                  <View
+                    style={{
+                      backgroundColor: "#1f2937",
+                      borderRadius: 14,
+                      marginRight: 14,
+                      width: 160,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <Image
+                      source={{ uri: item.imagenes?.[0] }}
+                      style={{ width: "100%", height: 110 }}
+                      resizeMode="cover"
+                    />
+                    <View style={{ padding: 10 }}>
+                      <Text
+                        numberOfLines={1}
+                        style={{ color: "#E5E7EB", fontWeight: "600" }}
+                      >
+                        {item.nombre}
+                      </Text>
+                      <Text style={{ color: "#ff8a29", marginTop: 4 }}>
+                        ${item.precio}
+                      </Text>
+                      <Text style={{ color: "#9CA3AF", fontSize: 12 }}>
+                        {item.ferreteria?.razon_social}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              />
+            ) : (
+              <Text style={{ color: "#9CA3AF", marginLeft: 16 }}>
+                No se encontraron productos cercanos.
+              </Text>
+            )}
+          </View>
+        )}
 
         {/* 📜 Lista ferreterías */}
         {filter === "ferreterias" && (
