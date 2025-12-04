@@ -7,10 +7,9 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import { useColorScheme } from '../hooks/useColorScheme';
-
+import { View } from "react-native";
 
 export {
-  // Catch any errors thrown by the Layout component.
   ErrorBoundary,
 } from 'expo-router';
 
@@ -18,7 +17,6 @@ export const unstable_settings = {
   initialRouteName: '(auth)',
 };
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -48,18 +46,17 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      {/* 🔥 PROVIDER NECESARIO PARA ActionSheet */}
-      <ActionSheetProvider>
-
-        <Stack initialRouteName="index">
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-        </Stack>
-
-      </ActionSheetProvider>
-    </ThemeProvider>
+    <View style={{ flex: 1 }}> 
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <ActionSheetProvider>
+          <Stack initialRouteName="index">
+            <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+          </Stack>
+        </ActionSheetProvider>
+      </ThemeProvider>
+    </View>
   );
 }

@@ -5,9 +5,12 @@ import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { FerreteriaCercana, getFerreteriasCercanas } from '@/lib/ferreterias';
 import { Image } from "react-native";
+import { Animated } from "react-native";
+
 
 
 type Props = {
+  onMapPress?: () => void;
   onFerreteriaPress?: (ferreteria: FerreteriaCercana) => void;
   onFerreteriasChange?: (ferreterias: FerreteriaCercana[]) => void;
   focusedFerreteria?: FerreteriaCercana | null;
@@ -22,6 +25,7 @@ const INITIAL_REGION = {
 };
 
 export function MapaFerreterias({
+  onMapPress, 
   onFerreteriaPress,
   onFerreteriasChange,
   focusedFerreteria,
@@ -31,6 +35,9 @@ export function MapaFerreterias({
   const [ferreterias, setFerreterias] = useState<FerreteriaCercana[]>([]);
   const [loadingFerreterias, setLoadingFerreterias] = useState(false);
   const mapRef = useRef<MapView | null>(null);
+  const sheetAnim = useRef(new Animated.Value(0)).current;
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
 
   // 📍 Región inicial basada en ubicación manual o GPS
   const region = useMemo(() => {
@@ -106,6 +113,16 @@ export function MapaFerreterias({
         provider={PROVIDER_GOOGLE}
         initialRegion={region}
         showsUserLocation
+
+        // 🔥 Tocar el mapa vacío → baja el sheet
+        onPress={() => {
+          Animated.timing(sheetAnim, {
+            toValue: 1, // sheet abajo
+            duration: 200,
+            useNativeDriver: true,
+          }).start();
+          setIsCollapsed(true);
+        }}
       >
         {ferreterias.map((f) => (
           <Marker
@@ -116,10 +133,15 @@ export function MapaFerreterias({
             }}
             title={f.razon_social}
             description={f.direccion ?? "Ferretería local"}
-            onPress={() => onFerreteriaPress?.(f)}
+
+            // 🚫 NO permitir que tocar el marcador ejecute el onPress del mapa
+            onPress={(e) => {
+              e.stopPropagation();          // 👈 evita colapsar el sheet
+              onFerreteriaPress?.(f);       // 👈 mantiene tu lógica original
+            }}
           >
             <Image
-              source={require("../assets/images/icon-pin2.png")} // ✅ tu nuevo pin naranjo
+              source={require("../assets/images/icon-pin2.png")}
               style={{ width: 43, height: 43 }}
               resizeMode="contain"
             />
@@ -132,9 +154,11 @@ export function MapaFerreterias({
             coordinate={manualLocation}
             title="Ubicación seleccionada"
             pinColor="#ff8a29"
+            onPress={(e) => e.stopPropagation()} // ⬅️ evita colapsar el sheet si se toca este marcador
           />
         )}
       </MapView>
+
 
       {loadingFerreterias && (
         <View style={styles.loadingOverlay}>

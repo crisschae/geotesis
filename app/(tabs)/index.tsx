@@ -19,6 +19,9 @@ import type { FerreteriaCercana } from "@/lib/ferreterias";
 import { useRouter } from "expo-router";
 import { getProductoMasBaratoPorFerreteria } from "@/lib/productos";
 import { getProductosCercanos } from "@/lib/productos";
+import { PanResponder } from "react-native";
+import { Dimensions } from "react-native";
+
 
 const ORANGE = "#ff8a29";
 const DARK_BG = "#111827";
@@ -40,6 +43,62 @@ export default function HomeScreen() {
   const router = useRouter();
   const [productosCercanos, setProductosCercanos] = useState<any[]>([]);
   const [loadingProductos, setLoadingProductos] = useState(false);
+  // 🔍 Estados para el buscador estilo MercadoLibre
+  const [searchMode, setSearchMode] = useState(false);
+  const [query, setQuery] = useState("");
+  // Animación del overlay
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  //alto de la pantalla
+  const [sheetHeight, setSheetHeight] = useState(0);
+
+
+
+
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gesture) => {
+        return Math.abs(gesture.dy) > 10;
+      },
+      onPanResponderMove: (_, gesture) => {
+        if (gesture.dy > 0) {
+          sheetAnim.setValue(Math.min(1, gesture.dy / 320));
+        } else {
+          sheetAnim.setValue(Math.max(0, 1 + gesture.dy / 320));
+        }
+      },
+      onPanResponderRelease: (_, gesture) => {
+        if (gesture.dy > 100) {
+          Animated.timing(sheetAnim, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          }).start();
+        } else {
+          Animated.timing(sheetAnim, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    })
+  ).current;
+
+
+
+
+
+  // Efecto para animar entrada/salida del overlay
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: searchMode ? 1 : 0,
+      duration: 180,
+      useNativeDriver: true,
+    }).start();
+  }, [searchMode]);
+
+
 
   // 🔹 Cargar ciudad y coordenadas guardadas
   useEffect(() => {
@@ -81,6 +140,17 @@ export default function HomeScreen() {
       useNativeDriver: true,
     }).start();
   };
+
+  const collapseSheet = () => {
+    Animated.timing(sheetAnim, {
+      toValue: 1, // abajo → solo buscador visible
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+
+    setIsCollapsed(true);
+  };
+
 
   // 🔹 Modelo híbrido: obtener distancia real desde Google API
   const obtenerTiempoRuta = async (origen: any, destino: any) => {
@@ -125,6 +195,8 @@ export default function HomeScreen() {
 
 
 
+
+
   return (
     <View style={styles.screen}>
       {/* 📍 Encabezado estilo Facebook */}
@@ -142,6 +214,7 @@ export default function HomeScreen() {
       {/* 🗺️ Mapa */}
       <View style={styles.mapContainer}>
         <MapaFerreterias
+          onMapPress={collapseSheet}
           onFerreteriaPress={setSelectedFerreteria}
           onFerreteriasChange={setNearFerreterias}
           focusedFerreteria={selectedFerreteria}
@@ -149,8 +222,14 @@ export default function HomeScreen() {
         />
       </View>
 
+      
       {/* 🧱 Sheet inferior */}
       <Animated.View
+        onLayout={(event) => {
+          const { height } = event.nativeEvent.layout;
+          setSheetHeight(height); // ⬅️ guarda la altura real del sheet
+        }}
+        {...panResponder.panHandlers}
         style={[
           styles.bottomCard,
           {
@@ -158,32 +237,35 @@ export default function HomeScreen() {
               {
                 translateY: sheetAnim.interpolate({
                   inputRange: [0, 1],
-                  outputRange: [0, 180],
+                  outputRange: [
+                    0,
+                    sheetHeight > 0 ? sheetHeight - 105 : 0 // ⬅️ baja hasta dejar solo el buscador visible
+                  ],
                 }),
               },
             ],
           },
         ]}
       >
+
         <TouchableOpacity activeOpacity={0.8} onPress={toggleSheet}>
           <View style={styles.sheetHandleWrapper}>
             <View style={styles.sheetHandle} />
           </View>
         </TouchableOpacity>
 
-        {/* 🔍 Buscador */}
-        <View style={styles.searchWrapper}>
+        {/* 🔍 Buscador MercadoLibre (input falso) */}
+        <TouchableOpacity
+          style={styles.searchWrapper}
+          onPress={() => setSearchMode(true)}
+        >
           <View style={styles.searchIconCircle}>
             <Text style={styles.searchIcon}>⌕</Text>
           </View>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Buscar productos o ferreterías..."
-            placeholderTextColor="#9CA3AF"
-            value={search}
-            onChangeText={setSearch}
-          />
-        </View>
+          <Text style={{ color: "#9CA3AF", fontSize: 15 }}>
+            Buscar productos o ferreterías...
+          </Text>
+        </TouchableOpacity>
 
         {/* 🔸 Filtros */}
         <View style={styles.filtersRow}>
@@ -246,10 +328,7 @@ export default function HomeScreen() {
                       resizeMode="cover"
                     />
                     <View style={{ padding: 10 }}>
-                      <Text
-                        numberOfLines={1}
-                        style={{ color: "#E5E7EB", fontWeight: "600" }}
-                      >
+                      <Text numberOfLines={1} style={{ color: "#E5E7EB", fontWeight: "600" }}>
                         {item.nombre}
                       </Text>
                       <Text style={{ color: "#ff8a29", marginTop: 4 }}>
@@ -312,7 +391,63 @@ export default function HomeScreen() {
             </View>
           </View>
         )}
+
       </Animated.View>
+
+      {/* 🟦 Overlay de búsqueda estilo MercadoLibre */}
+      {searchMode && (
+        <Animated.View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: DARK_BG,
+            padding: 20,
+            opacity: fadeAnim,
+            zIndex: 999,
+          }}
+        >
+          {/* Input REAL */}
+          <TextInput
+            autoFocus
+            placeholder="Buscar..."
+            placeholderTextColor="#aaa"
+            value={query}
+            onChangeText={setQuery}
+            onSubmitEditing={() => {
+              if (query.trim().length > 0) {
+                router.push(`/search?query=${query}`);
+                setSearchMode(false);
+                setQuery("");
+              }
+            }}
+            style={{
+              backgroundColor: "#1f2937",
+              padding: 12,
+              borderRadius: 10,
+              color: "#fff",
+              fontSize: 16,
+            }}
+          />
+
+          {/* Botón cancelar */}
+          <TouchableOpacity onPress={() => setSearchMode(false)}>
+            <Text
+              style={{
+                color: ORANGE,
+                fontSize: 16,
+                marginTop: 20,
+                textAlign: "center",
+              }}
+            >
+              Cancelar
+            </Text>
+          </TouchableOpacity>
+        </Animated.View>
+      )}
+
 
       {/* 🧭 Sheet individual con "Ver ruta" */}
       <FerreteriaSheet
