@@ -4,6 +4,8 @@ import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
 
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { FerreteriaCercana, getFerreteriasCercanas } from '@/lib/ferreterias';
+import { Image } from "react-native";
+
 
 type Props = {
   onFerreteriaPress?: (ferreteria: FerreteriaCercana) => void;
@@ -102,8 +104,9 @@ export function MapaFerreterias({
         ref={mapRef}
         style={styles.map}
         provider={PROVIDER_GOOGLE}
+        initialRegion={region}
         showsUserLocation
-        initialRegion={region}>
+      >
         {ferreterias.map((f) => (
           <Marker
             key={f.id_ferreteria}
@@ -112,10 +115,15 @@ export function MapaFerreterias({
               longitude: Number(f.longitud),
             }}
             title={f.razon_social}
-            description={f.direccion ?? undefined}
+            description={f.direccion ?? "Ferretería local"}
             onPress={() => onFerreteriaPress?.(f)}
-            image={require('@/assets/images/pinferre.png')}
-          />
+          >
+            <Image
+              source={require("../assets/images/icon-pin2.png")} // ✅ tu nuevo pin naranjo
+              style={{ width: 43, height: 43 }}
+              resizeMode="contain"
+            />
+          </Marker>
         ))}
 
         {/* 🔸 Muestra marcador si la ubicación es manual */}
