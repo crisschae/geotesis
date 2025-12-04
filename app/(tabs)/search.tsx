@@ -53,6 +53,17 @@ export default function SearchScreen() {
   const debouncedSearch = useDebounce(busqueda, 350);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string | null>(null);
+  const [ordenPrecio, setOrdenPrecio] = useState<"asc" | "desc" | null>(null);
+  const [ferreterias, setFerreterias] = useState<any[]>([]);
+  const [ferreteriaSeleccionada, setFerreteriaSeleccionada] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function cargarFerreterias() {
+      const { data } = await supabase.from("ferreteria").select("id_ferreteria, razon_social");
+      if (data) setFerreterias(data);
+    }
+    cargarFerreterias();
+  }, []);
 
   useEffect(() => {
     async function cargarCategorias() {
@@ -73,7 +84,7 @@ export default function SearchScreen() {
     if (debouncedSearch.trim().length === 0) {
       buscar(""); // ⭐ para que cargue categoría sin búsqueda
     }
-  }, [debouncedSearch, categoriaSeleccionada]);
+  }, [debouncedSearch, categoriaSeleccionada, ordenPrecio, ferreteriaSeleccionada]);
 
   useEffect(() => {
     if (query) {
@@ -101,14 +112,29 @@ export default function SearchScreen() {
         )
       `);
 
+    // 🔎 FILTRO POR TEXTO
     if (texto && texto.trim().length > 0) {
       consulta = consulta.ilike("nombre", `%${texto}%`);
     }
 
+    // 🏷️ FILTRO POR CATEGORÍA
     if (categoriaSeleccionada) {
       consulta = consulta.eq("id_categoria", categoriaSeleccionada);
     }
 
+    if (ferreteriaSeleccionada) {
+      consulta = consulta.eq("id_ferreteria", ferreteriaSeleccionada);
+    }
+
+
+    // 💰 ORDENAR POR PRECIO (ascendente o descendente)
+    if (ordenPrecio) {
+      consulta = consulta.order("precio", {
+        ascending: ordenPrecio === "asc",
+      });
+    }
+
+    // 📌 EJECUTAR CONSULTA
     const { data, error } = await consulta;
 
     if (!error && data) {
@@ -127,6 +153,7 @@ export default function SearchScreen() {
 
     setLoading(false);
   }
+
   
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#111827" }}>
@@ -160,61 +187,154 @@ export default function SearchScreen() {
 
         {/* Chips de categoría */}
         <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={{ 
-            marginBottom: 10,
-            maxHeight:35}}
-          contentContainerStyle={{
-            paddingVertical: 1,
-            alignItems: "center",
-          }}
-        >
-          {categorias.map((cat) => (
-            <TouchableOpacity
-              key={cat.id_categoria}
-              onPress={() =>
-                setCategoriaSeleccionada(
-                  categoriaSeleccionada === cat.id_categoria
-                    ? null
-                    : cat.id_categoria
-                )
-              }
-              style={{
-                paddingVertical: 5,
-                paddingHorizontal: 12,
-                backgroundColor:
-                  categoriaSeleccionada === cat.id_categoria
-                    ? "#ff8a29"
-                    : "#1f2937",
-                borderRadius: 20,
-                marginRight: 8,
-                borderWidth: 1,
-                borderColor:
-                  categoriaSeleccionada === cat.id_categoria
-                    ? "#ff8a29"
-                    : "#374151",
-                height: 36,
-                justifyContent: "center",
-              }}
-            >
-              <Text
-                style={{
-                  color:
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ 
+              marginBottom: 10,
+              maxHeight:35}}
+            contentContainerStyle={{
+              paddingVertical: 1,
+              alignItems: "center",
+            }}
+          >
+            {categorias.map((cat) => (
+              <TouchableOpacity
+                key={cat.id_categoria}
+                onPress={() =>
+                  setCategoriaSeleccionada(
                     categoriaSeleccionada === cat.id_categoria
-                      ? "#000"
-                      : "#fff",
-                  fontWeight: "600",
-                  fontSize: 13,
+                      ? null
+                      : cat.id_categoria
+                  )
+                }
+                style={{
+                  paddingVertical: 5,
+                  paddingHorizontal: 12,
+                  backgroundColor:
+                    categoriaSeleccionada === cat.id_categoria
+                      ? "#ff8a29"
+                      : "#1f2937",
+                  borderRadius: 20,
+                  marginRight: 8,
+                  borderWidth: 1,
+                  borderColor:
+                    categoriaSeleccionada === cat.id_categoria
+                      ? "#ff8a29"
+                      : "#374151",
+                  height: 36,
+                  justifyContent: "center",
                 }}
               >
-                {cat.nombre}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+                <Text
+                  style={{
+                    color:
+                      categoriaSeleccionada === cat.id_categoria
+                        ? "#000"
+                        : "#fff",
+                    fontWeight: "600",
+                    fontSize: 13,
+                  }}
+                >
+                  {cat.nombre}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          {/* Ordenar por precio */}
+            <View
+              style={{
+                flexDirection: "row",
+                gap: 10,
+                marginBottom: 10,
+              }}
+  >
+    <TouchableOpacity
+      onPress={() => setOrdenPrecio("asc")}
+      style={{
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        borderRadius: 20,
+        backgroundColor: ordenPrecio === "asc" ? "#ff8a29" : "#1f2937",
+        borderWidth: 1,
+        borderColor: ordenPrecio === "asc" ? "#ff8a29" : "#374151",
+      }}
+    >
+      <Text
+        style={{
+          color: ordenPrecio === "asc" ? "#000" : "#fff",
+          fontWeight: "600",
+          fontSize: 13,
+        }}
+      >
+        Precio más bajo
+      </Text>
+    </TouchableOpacity>
+
+    <TouchableOpacity
+      onPress={() => setOrdenPrecio("desc")}
+      style={{
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        borderRadius: 20,
+        backgroundColor: ordenPrecio === "desc" ? "#ff8a29" : "#1f2937",
+        borderWidth: 1,
+        borderColor: ordenPrecio === "desc" ? "#ff8a29" : "#374151",
+      }}
+    >
+      <Text
+        style={{
+          color: ordenPrecio === "desc" ? "#000" : "#fff",
+          fontWeight: "600",
+          fontSize: 13,
+        }}
+      >
+        Precio más alto
+      </Text>
+    </TouchableOpacity>
+  </View>
+    {/* Filtro por ferretería */}
+    <View style={{ marginBottom: 10 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        {ferreterias.map((f) => (
+          <TouchableOpacity
+            key={f.id_ferreteria}
+            onPress={() =>
+              setFerreteriaSeleccionada(
+                ferreteriaSeleccionada === f.id_ferreteria ? null : f.id_ferreteria
+              )
+            }
+            style={{
+              paddingVertical: 6,
+              paddingHorizontal: 12,
+              borderRadius: 20,
+              marginRight: 8,
+              backgroundColor:
+                ferreteriaSeleccionada === f.id_ferreteria ? "#ff8a29" : "#1f2937",
+              borderColor:
+                ferreteriaSeleccionada === f.id_ferreteria ? "#ff8a29" : "#374151",
+              borderWidth: 1,
+            }}
+          >
+            <Text
+              style={{
+                color:
+                  ferreteriaSeleccionada === f.id_ferreteria ? "#000" : "#fff",
+                fontWeight: "600",
+              }}
+            >
+              {f.razon_social}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+
 
         {loading && <ActivityIndicator size="large" color="#ff8a29" />}
+        <Text style={{ color: "#9CA3AF", marginBottom: 8 }}>
+          {resultados.length} resultados encontrados
+        </Text>
+
 
         {/* Resultados */}
         <View style={{ flex: 1, marginTop: 10 }}>
@@ -225,6 +345,23 @@ export default function SearchScreen() {
               paddingBottom: 40,
               paddingTop: 0,
             }}
+
+            // ⭐ MENSAJE SI NO HAY RESULTADOS
+            ListEmptyComponent={() =>
+              !loading ? (
+                <Text
+                  style={{
+                    color: "#9CA3AF",
+                    textAlign: "center",
+                    marginTop: 40,
+                    fontSize: 16,
+                  }}
+                >
+                  No se encontraron productos con los filtros aplicados.
+                </Text>
+              ) : null
+            }
+            
             renderItem={({ item }) => (
               <TouchableOpacity
                 onPress={() => router.push(`/productos/${item.id_producto}`)}
