@@ -183,11 +183,12 @@ export function FerreteriaSheet({
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.35)',
-  },
+    backdrop: {
+      flex: 1,
+      justifyContent: 'flex-end',
+      backgroundColor: 'transparent',  // ⬅️ Solución definitiva
+    },
+
   sheet: {
     backgroundColor: '#020617',
     paddingHorizontal: 20,

@@ -215,7 +215,10 @@ export default function HomeScreen() {
       <View style={styles.mapContainer}>
         <MapaFerreterias
           onMapPress={collapseSheet}
-          onFerreteriaPress={setSelectedFerreteria}
+          onFerreteriaPress={(f) => {
+            setSelectedFerreteria(f);
+            collapseSheet(); // ⬅️ evita que el sheet grande bloquee el mapa
+          }}
           onFerreteriasChange={setNearFerreterias}
           focusedFerreteria={selectedFerreteria}
           manualLocation={manualLocation}
@@ -225,6 +228,7 @@ export default function HomeScreen() {
       
       {/* 🧱 Sheet inferior */}
       <Animated.View
+        pointerEvents={selectedFerreteria ? "none" : "auto"}
         onLayout={(event) => {
           const { height } = event.nativeEvent.layout;
           setSheetHeight(height); // ⬅️ guarda la altura real del sheet
@@ -386,7 +390,10 @@ export default function HomeScreen() {
                       key={f.id_ferreteria}
                       style={styles.ferreteriaItem}
                       activeOpacity={0.8}
-                      onPress={() => setSelectedFerreteria(f)}
+                      onPress={() => {
+                        setSelectedFerreteria(f);
+                        collapseSheet();  
+                      }}
                     >
                       <View>
                         <Text style={styles.ferreteriaName}>{f.razon_social}</Text>
