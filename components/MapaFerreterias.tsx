@@ -9,6 +9,7 @@ type Props = {
   onFerreteriaPress?: (ferreteria: FerreteriaCercana) => void;
   onFerreteriasChange?: (ferreterias: FerreteriaCercana[]) => void;
   focusedFerreteria?: FerreteriaCercana | null;
+  manualLocation?: { latitude: number; longitude: number } | null; // 🔸 agregado
 };
 
 const INITIAL_REGION = {
@@ -22,13 +23,23 @@ export function MapaFerreterias({
   onFerreteriaPress,
   onFerreteriasChange,
   focusedFerreteria,
+  manualLocation, // 🔸 agregado
 }: Props) {
   const loc = useUserLocation();
   const [ferreterias, setFerreterias] = useState<FerreteriaCercana[]>([]);
   const [loadingFerreterias, setLoadingFerreterias] = useState(false);
   const mapRef = useRef<MapView | null>(null);
 
+  // 📍 Región inicial basada en ubicación manual o GPS
   const region = useMemo(() => {
+    if (manualLocation) {
+      return {
+        latitude: manualLocation.latitude,
+        longitude: manualLocation.longitude,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      };
+    }
     if (loc.status === 'ready' && loc.location) {
       return {
         latitude: loc.location.latitude,
@@ -38,17 +49,20 @@ export function MapaFerreterias({
       };
     }
     return INITIAL_REGION;
-  }, [loc]);
+  }, [loc, manualLocation]);
 
+  // 🔹 Cargar ferreterías cercanas
   useEffect(() => {
     const load = async () => {
-      if (loc.status !== 'ready' || !loc.location) return;
+      const baseCoords = manualLocation || loc.location;
+      if (!baseCoords) return;
+
       try {
         setLoadingFerreterias(true);
         const data = await getFerreteriasCercanas({
-          latitud: loc.location.latitude,
-          longitud: loc.location.longitude,
-          radioKm: 60, // radio amplio para desarrollo (luego podemos hacerlo configurable)
+          latitud: baseCoords.latitude,
+          longitud: baseCoords.longitude,
+          radioKm: 60,
         });
         setFerreterias(data);
         onFerreteriasChange?.(data);
@@ -59,9 +73,9 @@ export function MapaFerreterias({
       }
     };
     load();
-  }, [loc.status, loc.location]);
+  }, [loc.status, loc.location, manualLocation]);
 
-  // Enfocar ferretería seleccionada desde la lista
+  // 🔹 Enfocar ferretería seleccionada
   useEffect(() => {
     if (!focusedFerreteria || !mapRef.current) return;
     const f = focusedFerreteria;
@@ -93,14 +107,25 @@ export function MapaFerreterias({
         {ferreterias.map((f) => (
           <Marker
             key={f.id_ferreteria}
-            coordinate={{ latitude: Number(f.latitud), longitude: Number(f.longitud) }}
+            coordinate={{
+              latitude: Number(f.latitud),
+              longitude: Number(f.longitud),
+            }}
             title={f.razon_social}
             description={f.direccion ?? undefined}
             onPress={() => onFerreteriaPress?.(f)}
-            // Pin personalizado: usa un PNG local de assets
             image={require('@/assets/images/pinferre.png')}
           />
         ))}
+
+        {/* 🔸 Muestra marcador si la ubicación es manual */}
+        {manualLocation && (
+          <Marker
+            coordinate={manualLocation}
+            title="Ubicación seleccionada"
+            pinColor="#ff8a29"
+          />
+        )}
       </MapView>
 
       {loadingFerreterias && (
@@ -135,5 +160,3 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
 });
-
-
