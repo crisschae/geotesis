@@ -449,7 +449,7 @@ export default function HomeScreen() {
 
                       {/* Distancia real con fallback */}
                       <Text style={styles.ferreteriaDistance}>
-                        {f.distancia_google ?? `${f.distancia_km.toFixed(1)} km`}
+                        
                       </Text>
                     </View>
                   </TouchableOpacity>
