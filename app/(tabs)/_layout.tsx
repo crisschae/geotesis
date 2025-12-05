@@ -68,6 +68,13 @@ export default function TabLayout() {
               tabBarIcon: ({ color }) => <TabBarIcon name="list-alt" color={color} />,
             }}
           />
+          {/* Ocultar pantalla de detalle de la tab bar */}
+          <Tabs.Screen
+            name="quote-detail/[id]"
+            options={{
+              href: null,
+            }}
+          />
           <Tabs.Screen
             name="two"
             options={{

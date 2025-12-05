@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
+  Alert,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
@@ -57,6 +58,15 @@ export default function SearchScreen() {
   const [ferreterias, setFerreterias] = useState<any[]>([]);
   const [ferreteriaSeleccionada, setFerreteriaSeleccionada] = useState<string | null>(null);
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
+  // Estados para cotización por nombre genérico
+  const [solicitudNombre, setSolicitudNombre] = useState("");
+  const [solicitudCantidad, setSolicitudCantidad] = useState("1");
+  const [itemsSolicitados, setItemsSolicitados] = useState<{ nombre_busqueda: string; cantidad: number }[]>([]);
+  const [creando, setCreando] = useState(false);
+  const [clienteId, setClienteId] = useState<string | null>(null);
+
+  const ORANGE = "#ff8a29";
+  const DARK_BG = "#111827";
 
 
   useEffect(() => {
@@ -76,6 +86,21 @@ export default function SearchScreen() {
       if (data) setCategorias(data);
     }
     cargarCategorias();
+  }, []);
+
+  // obtener cliente_app para usar en el RPC
+  useEffect(() => {
+    const loadCliente = async () => {
+      const { data: { user }, error: userErr } = await supabase.auth.getUser();
+      if (userErr || !user) return;
+      const { data: cliente, error: cErr } = await supabase
+        .from("cliente_app")
+        .select("id_cliente")
+        .eq("auth_user_id", user.id)
+        .maybeSingle();
+      if (!cErr && cliente?.id_cliente) setClienteId(cliente.id_cliente);
+    };
+    loadCliente();
   }, []);
 
   useEffect(() => {
@@ -156,10 +181,144 @@ export default function SearchScreen() {
     setLoading(false);
   }
 
+  const addItemSolicitado = () => {
+    const nombre = solicitudNombre.trim();
+    const qty = Math.max(1, parseInt(solicitudCantidad || "1", 10));
+    if (!nombre) return;
+    setItemsSolicitados((prev) => [...prev, { nombre_busqueda: nombre, cantidad: qty }]);
+    setSolicitudNombre("");
+    setSolicitudCantidad("1");
+  };
+
+  const removeItemSolicitado = (idx: number) => {
+    setItemsSolicitados((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const crearCotizacion = async () => {
+    try {
+      if (!clienteId) throw new Error("No se encontró tu perfil de cliente");
+      if (itemsSolicitados.length === 0) throw new Error("Agrega al menos un producto");
+      setCreando(true);
+      const { data, error } = await supabase.rpc("fn_create_cotizacion_desde_busqueda", {
+        p_id_cliente: clienteId,
+        p_items: itemsSolicitados,
+        p_max_resultados: 3,
+      });
+      if (error) throw error;
+      if (data?.status !== "ok") {
+        throw new Error(data?.message ?? "No se pudo crear la cotización");
+      }
+      Alert.alert("Cotización creada", `ID: ${data.id_cotizacion}`, [
+        { text: "Ver cotizaciones", onPress: () => router.push("/(tabs)/quotes") },
+        { text: "OK" },
+      ]);
+      setItemsSolicitados([]);
+    } catch (err: any) {
+      Alert.alert("Error", err?.message ?? "No se pudo crear la cotización");
+    } finally {
+      setCreando(false);
+    }
+  };
+
   
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#111827" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: DARK_BG }}>
       <View style={{ flex: 1, padding: 15 }}>
+
+        {/* Crear cotización por nombre */}
+        <View style={{ backgroundColor: "#1f2937", borderRadius: 12, padding: 12, marginBottom: 14, gap: 10 }}>
+          <Text style={{ color: "#fff", fontSize: 16, fontWeight: "700" }}>Crear cotización</Text>
+          <Text style={{ color: "#9CA3AF", fontSize: 13 }}>
+            Escribe el nombre del producto (ej: "cemento") y la cantidad. Buscaremos la mejor ferretería con stock y costo total.
+          </Text>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <TextInput
+              value={solicitudNombre}
+              onChangeText={setSolicitudNombre}
+              placeholder="Nombre del producto"
+              placeholderTextColor="#aaa"
+              style={{
+                flex: 1,
+                backgroundColor: "#111827",
+                color: "#fff",
+                padding: 10,
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: "#1f2937",
+              }}
+            />
+            <TextInput
+              value={solicitudCantidad}
+              onChangeText={setSolicitudCantidad}
+              placeholder="Cant."
+              placeholderTextColor="#aaa"
+              keyboardType="numeric"
+              style={{
+                width: 80,
+                backgroundColor: "#111827",
+                color: "#fff",
+                padding: 10,
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: "#1f2937",
+                textAlign: "center",
+              }}
+            />
+            <TouchableOpacity
+              onPress={addItemSolicitado}
+              style={{
+                backgroundColor: ORANGE,
+                paddingHorizontal: 12,
+                justifyContent: "center",
+                borderRadius: 8,
+              }}
+            >
+              <Text style={{ color: DARK_BG, fontWeight: "700" }}>Añadir</Text>
+            </TouchableOpacity>
+          </View>
+
+          {itemsSolicitados.length > 0 && (
+            <View style={{ gap: 6, marginTop: 6 }}>
+              {itemsSolicitados.map((it, idx) => (
+                <View
+                  key={`${it.nombre_busqueda}-${idx}`}
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    backgroundColor: "#0f172a",
+                    padding: 10,
+                    borderRadius: 8,
+                  }}
+                >
+                  <View>
+                    <Text style={{ color: "#fff", fontWeight: "600" }}>{it.nombre_busqueda}</Text>
+                    <Text style={{ color: "#9CA3AF", fontSize: 12 }}>Cantidad: {it.cantidad}</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => removeItemSolicitado(idx)}>
+                    <Text style={{ color: "#ef4444", fontWeight: "700" }}>Eliminar</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
+
+          <TouchableOpacity
+            onPress={crearCotizacion}
+            disabled={creando || itemsSolicitados.length === 0}
+            style={{
+              backgroundColor: creando || itemsSolicitados.length === 0 ? "#6b7280" : ORANGE,
+              paddingVertical: 12,
+              borderRadius: 10,
+              alignItems: "center",
+              marginTop: 4,
+            }}
+          >
+            <Text style={{ color: DARK_BG, fontWeight: "700" }}>
+              {creando ? "Creando..." : "Generar cotización"}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Barra de búsqueda */}
         <View
@@ -181,7 +340,7 @@ export default function SearchScreen() {
           />
 
           <TouchableOpacity onPress={() => buscar(busqueda)}>
-            <Text style={{ color: "#ff8a29", fontSize: 16, marginLeft: 10 }}>
+            <Text style={{ color: ORANGE, fontSize: 16, marginLeft: 10 }}>
               Buscar
             </Text>
           </TouchableOpacity>
