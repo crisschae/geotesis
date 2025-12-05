@@ -64,7 +64,7 @@ function useCartRecommendations(): RecommendedProduct[] {
 
 export default function CartScreen() {
   const router = useRouter();
-  const { cart, addToCart, decreaseQuantity, removeFromCart, clearCart } =
+  const { cart, addToCart, decreaseQuantity, incrementQuantity, removeFromCart, clearCart } =
     useCartStore();
 
   const [loading, setLoading] = useState(false);
@@ -404,7 +404,7 @@ export default function CartScreen() {
                 </Text>
 
                 <TouchableOpacity
-                  onPress={() => addToCart(item)}
+                  onPress={() => incrementQuantity(item.id_producto)} // incrementa 1 fijo, sin duplicar
                   style={{
                     width: 32,
                     height: 32,

@@ -19,12 +19,10 @@ const ORANGE = "#ff8a29";
 const DARK_BG = "#111827";
 const CARD_BG = "#020617";
 
-type UnidadVenta = "unidad" | "lote10" | "lote50";
+type UnidadVenta = "unidad" ;
 
 const UNIDADES: { id: UnidadVenta; label: string; descripcion: string }[] = [
   { id: "unidad", label: "Unidad", descripcion: "Precio por unidad" },
-  { id: "lote10", label: "Lote x10", descripcion: "Lote de 10 unidades" },
-  { id: "lote50", label: "Lote x50", descripcion: "Lote de 50 unidades" },
 ];
 
 export default function ProductoScreen() {
@@ -35,6 +33,7 @@ export default function ProductoScreen() {
   const [producto, setProducto] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [unidad, setUnidad] = useState<UnidadVenta>("unidad");
+  const [cantidad, setCantidad] = useState<string>("1");
 
   // Zustand
   const addToCart = useCartStore((s) => s.addToCart);
@@ -119,7 +118,7 @@ export default function ProductoScreen() {
         nombre: producto.nombre,
         precio: producto.precio,
         imagenes: imagenes,
-        quantity: 1,
+        quantity: Math.max(1, parseInt(cantidad || "1", 10)),
 
         // 🔥 AGREGAR ESTAS DOS LÍNEAS 🔥
         id_ferreteria: producto.ferreteria?.id_ferreteria,
@@ -194,50 +193,45 @@ export default function ProductoScreen() {
         )}
       </View>
 
-      {/* Selector de unidad de venta */}
-      <View style={styles.unitSelectorCard}>
-        <Text style={styles.unitTitle}>Unidad de venta</Text>
-        <View style={styles.unitRow}>
-          {UNIDADES.map((u) => {
-            const active = u.id === unidad;
-            return (
-              <TouchableOpacity
-                key={u.id}
-                onPress={() => setUnidad(u.id)}
-                style={[
-                  styles.unitChip,
-                  active && styles.unitChipActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.unitChipText,
-                    active && styles.unitChipTextActive,
-                  ]}
-                >
-                  {u.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-        {producto.descripcion && (
-          <Text style={styles.descripcion}>{producto.descripcion}</Text>
-        )}
-      </View>
-
       {/* ====================== */}
       {/*  BOTÓN AGREGAR CARRITO */}
       {/* ====================== */}
-      <TouchableOpacity
-        style={styles.cartBtn}
-        onPress={() => {
-          addToCart(productForCart!);
-          router.push("/(tabs)/CartScreen");
-        }}
-      >
-        <Text style={styles.cartBtnText}>Agregar al Carrito 🛒</Text>
-      </TouchableOpacity>
+      <View style={styles.actionsRow}>
+        <TouchableOpacity
+          style={styles.cartBtn}
+          onPress={() => {
+            addToCart(productForCart!);
+            router.push("/(tabs)/CartScreen");
+          }}
+        >
+          <Text style={styles.cartBtnText}>Agregar al Carrito 🛒</Text>
+        </TouchableOpacity>
+        <View style={styles.qtyCompact}>
+          <TouchableOpacity
+            onPress={() =>
+              setCantidad((prev) => {
+                const num = Math.max(1, parseInt(prev || "1", 10) - 1);
+                return String(num);
+              })
+            }
+            style={styles.qtyBtnSmall}
+          >
+            <Text style={styles.qtyBtnText}>−</Text>
+          </TouchableOpacity>
+          <Text style={styles.qtyInputText}>{cantidad}</Text>
+          <TouchableOpacity
+            onPress={() =>
+              setCantidad((prev) => {
+                const num = Math.max(1, parseInt(prev || "1", 10) + 1);
+                return String(num);
+              })
+            }
+            style={styles.qtyBtnSmall}
+          >
+            <Text style={styles.qtyBtnText}>+</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
       {/* ====================== */}
       {/*       FERRETERÍA       */}
@@ -386,13 +380,54 @@ const styles = StyleSheet.create({
     backgroundColor: ORANGE,
     paddingVertical: 14,
     borderRadius: 10,
-    marginTop: 22,
+    marginTop: 0,
+    flex: 1,
   },
   cartBtnText: {
     textAlign: "center",
     color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
+  },
+
+  // Cantidad
+  actionsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 12,
+  },
+  qtyCompact: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#0b1220",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#2d3748",
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    alignSelf: "center",
+  },
+  qtyBtnSmall: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: "#1f2937",
+    borderWidth: 1,
+    borderColor: "#2d3748",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  qtyBtnText: {
+    color: "#F9FAFB",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  qtyInputText: {
+    color: "#F9FAFB",
+    fontSize: 16,
+    fontWeight: "700",
   },
 
   // CARD FERRETERÍA
