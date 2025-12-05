@@ -1,26 +1,22 @@
-import { useState, useRef, useEffect } from "react";
+import { FerreteriaSheet } from "@/components/FerreteriaSheet";
+import { MapaFerreterias } from "@/components/MapaFerreterias";
+import type { FerreteriaCercana } from "@/lib/ferreterias";
+import { getProductoMasBaratoPorFerreteria, getProductosCercanos } from "@/lib/productos";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
+import { useRouter } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Animated,
+  Image,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  ActivityIndicator,
-  Alert,
 } from "react-native";
-import axios from "axios";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Image } from "react-native";
-
-import { MapaFerreterias } from "@/components/MapaFerreterias";
-import { FerreteriaSheet } from "@/components/FerreteriaSheet";
-import type { FerreteriaCercana } from "@/lib/ferreterias";
-import { useRouter } from "expo-router";
-import { getProductoMasBaratoPorFerreteria } from "@/lib/productos";
-import { getProductosCercanos } from "@/lib/productos";
-import { PanResponder } from "react-native";
-import { Dimensions } from "react-native";
 
 
 const ORANGE = "#ff8a29";
@@ -28,6 +24,7 @@ const DARK_BG = "#111827";
 const CARD_BG = "#020617";
 
 const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_API_KEY;
+
 
 export default function HomeScreen() {
   const [search, setSearch] = useState("");
@@ -50,40 +47,6 @@ export default function HomeScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   //alto de la pantalla
   const [sheetHeight, setSheetHeight] = useState(0);
-
-
-
-
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, gesture) => {
-        return Math.abs(gesture.dy) > 10;
-      },
-      onPanResponderMove: (_, gesture) => {
-        if (gesture.dy > 0) {
-          sheetAnim.setValue(Math.min(1, gesture.dy / 320));
-        } else {
-          sheetAnim.setValue(Math.max(0, 1 + gesture.dy / 320));
-        }
-      },
-      onPanResponderRelease: (_, gesture) => {
-        if (gesture.dy > 100) {
-          Animated.timing(sheetAnim, {
-            toValue: 1,
-            duration: 200,
-            useNativeDriver: true,
-          }).start();
-        } else {
-          Animated.timing(sheetAnim, {
-            toValue: 0,
-            duration: 200,
-            useNativeDriver: true,
-          }).start();
-        }
-      },
-    })
-  ).current;
 
 
 
@@ -233,7 +196,6 @@ export default function HomeScreen() {
           const { height } = event.nativeEvent.layout;
           setSheetHeight(height); // ⬅️ guarda la altura real del sheet
         }}
-        {...panResponder.panHandlers}
         style={[
           styles.bottomCard,
           {
@@ -379,6 +341,8 @@ export default function HomeScreen() {
               <Animated.ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: 20 }}
+                nestedScrollEnabled
+                scrollEventThrottle={16}
               >
                 {nearFerreterias.length === 0 ? (
                   <Text style={styles.helperText}>
