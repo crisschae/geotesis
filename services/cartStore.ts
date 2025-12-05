@@ -6,6 +6,7 @@ interface CartState {
   addToCart: (product: Producto) => void;
   removeFromCart: (id_producto: string) => void;
   decreaseQuantity: (id_producto: string) => void;
+  incrementQuantity: (id_producto: string) => void;
   clearCart: () => void;
 }
 
@@ -14,6 +15,7 @@ export const useCartStore = create<CartState>((set, get) => ({
 
   addToCart: (item) =>
     set((state) => {
+      const qty = item.quantity ?? 1;
       const existing = state.cart.find(
         (p) => p.id_producto === item.id_producto
       );
@@ -31,7 +33,7 @@ export const useCartStore = create<CartState>((set, get) => ({
         return {
           cart: state.cart.map((p) =>
             p.id_producto === item.id_producto
-              ? { ...p, quantity: p.quantity! + 1 }
+              ? { ...p, quantity: (p.quantity ?? 1) + qty }
               : p
           ),
         };
@@ -40,7 +42,7 @@ export const useCartStore = create<CartState>((set, get) => ({
       return {
         cart: [
           ...state.cart,
-          { ...productoConFerreteria, quantity: 1 },
+          { ...productoConFerreteria, quantity: qty },
         ],
       };
     }),
@@ -48,6 +50,15 @@ export const useCartStore = create<CartState>((set, get) => ({
   removeFromCart: (id_producto) =>
     set((state) => ({
       cart: state.cart.filter((p) => p.id_producto !== id_producto),
+    })),
+
+  incrementQuantity: (id_producto) =>
+    set((state) => ({
+      cart: state.cart.map((p) =>
+        p.id_producto === id_producto
+          ? { ...p, quantity: (p.quantity ?? 1) + 1 }
+          : p
+      ),
     })),
 
   decreaseQuantity: (id_producto) =>
