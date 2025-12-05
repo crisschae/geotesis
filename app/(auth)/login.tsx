@@ -1,13 +1,15 @@
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-
+import { useLocalSearchParams } from "expo-router";
 import { supabase } from '@/lib/supabaseClient';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const { redirectTo } = useLocalSearchParams();
+
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -26,8 +28,22 @@ export default function LoginScreen() {
         Alert.alert('Error al iniciar sesión', error?.message ?? 'Revisa tus credenciales.');
         return;
       }
+      // Normalizar redirectTo por si viene como string[] o undefined
+        const redirect = Array.isArray(redirectTo)
+          ? redirectTo[0]
+          : redirectTo ?? null;
 
-      router.replace('/(tabs)');
+        if (redirect) {
+          if (redirect === "CartScreen") {
+            router.replace("/(tabs)/CartScreen");
+          } else {
+            router.replace("/(tabs)");
+          }
+        } else {
+          router.replace("/(tabs)");
+        }
+
+
     } catch (e: any) {
       Alert.alert('Error inesperado', e.message ?? 'Intenta nuevamente.');
     } finally {
