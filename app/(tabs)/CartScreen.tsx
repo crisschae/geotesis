@@ -86,6 +86,22 @@ export default function CartScreen() {
       .single();
     return data?.id_cliente ?? null;
   }
+  async function pagarProtegido() {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      // Redirige al login y vuelve aquí luego
+      router.push({
+        pathname: "/(auth)/login",
+        params: { redirectTo: "CartScreen" },
+      });
+      return;
+    }
+
+    // Si hay usuario, pagar normal
+    pagarConStripe();
+  }
+
 
   async function pagarConStripe() {
     try {
@@ -463,7 +479,7 @@ export default function CartScreen() {
         </View>
 
         <TouchableOpacity
-          onPress={pagarConStripe}
+          onPress={pagarProtegido}
           disabled={loading}
           style={{
             marginTop: 16,
