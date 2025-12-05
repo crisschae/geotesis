@@ -19,6 +19,7 @@ type Props = {
   onFerreteriaPress?: (ferreteria: FerreteriaCercana) => void;
   onFerreteriasChange?: (ferreterias: FerreteriaCercana[]) => void;
   focusedFerreteria?: FerreteriaCercana | null;
+  coordsParaRuta?: { lat: number; lng: number } | null;
 };
 
 export function MapaFerreterias({
@@ -26,6 +27,7 @@ export function MapaFerreterias({
   onFerreteriaPress,
   onFerreteriasChange,
   focusedFerreteria,
+  coordsParaRuta, 
 }:Props) {
   const loc = useUserLocation();
   const [ferreterias, setFerreterias] = useState<FerreteriaCercana[]>([]);
@@ -37,7 +39,7 @@ export function MapaFerreterias({
 
   // ➤ Ruta en el mapa
   const [routeCoords, setRouteCoords] = useState<{ latitude: number; longitude: number }[]>([]);
-
+  
 
   // 📍 Región inicial: SOLO GPS
   const region = useMemo(() => {
@@ -96,6 +98,12 @@ export function MapaFerreterias({
 
     mapRef.current.animateToRegion(region, 350);
   }, [focusedFerreteria]);
+
+    useEffect(() => {
+    if (!coordsParaRuta) return;
+    generarRuta(coordsParaRuta);
+  }, [coordsParaRuta]);
+
 
   // ============================================================
   // 🔹 Decodificar polyline (Google Directions API)
@@ -226,7 +234,7 @@ export function MapaFerreterias({
             onPress={(e) => {
               e.stopPropagation();
               onFerreteriaPress?.(f);
-              generarRuta({ lat: f.latitud, lng: f.longitud });
+              
             }}
           >
             <Image

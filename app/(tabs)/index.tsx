@@ -22,6 +22,8 @@ import { getProductosCercanos } from "@/lib/productos";
 import { PanResponder } from "react-native";
 import { useUserLocation } from "@/hooks/useUserLocation";
 
+
+
 const ORANGE = "#ff8a29";
 const DARK_BG = "#111827";
 const CARD_BG = "#020617";
@@ -53,6 +55,7 @@ export default function HomeScreen() {
 
   const [loadingRuta, setLoadingRuta] = useState(false);
   const [query, setQuery] = useState("");
+  const [coordsParaRuta, setCoordsParaRuta] = useState<{ lat: number; lng: number } | null>(null);
 
   // ===========================
   // ANIMACIÓN DE OVERLAY BÚSQUEDA
@@ -141,46 +144,36 @@ export default function HomeScreen() {
   // ===========================
   // DISTANCIA / DURACIÓN (ALERTA)
   // ===========================
-    const obtenerTiempoRuta = async (origen: any, destino: any) => {
-      try {
-        setLoadingRuta(true);
+  const obtenerTiempoRuta = async (origen: any, destino: any) => {
+    try {
+      setLoadingRuta(true);
+      const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_API_KEY;
+      const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origen.lat},${origen.lng}&destination=${destino.lat},${destino.lng}&mode=driving&language=es&key=${API_KEY}`;
 
-        // Usa la variable de entorno correcta
-        const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_API_KEY;
+      const response = await fetch(url);
+      const data = await response.json();
 
-        const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${origen.lat},${origen.lng}&destinations=${destino.lat},${destino.lng}&mode=driving&language=es&key=${API_KEY}`;
-
-        console.log("URL DistanceMatrix:", url);
-
-        const { data } = await axios.get(url);
-
-        console.log("Google Response:", data);
-
-        // Validar que existan datos
-        if (
-          !data.rows ||
-          !data.rows[0] ||
-          !data.rows[0].elements ||
-          !data.rows[0].elements[0] ||
-          data.rows[0].elements[0].status !== "OK"
-        ) {
-          console.log("❌ Respuesta inválida de Distance Matrix:", data);
-          return null;
-        }
-
-        const elemento = data.rows[0].elements[0];
-
-        return {
-          distancia: elemento.distance.text,
-          duracion: elemento.duration.text,
-        };
-      } catch (error) {
-        console.error("❌ Error con Google API:", error);
+      if (!data.routes || data.routes.length === 0) {
+        console.log("No route found:", data);
         return null;
-      } finally {
-        setLoadingRuta(false);
       }
-    };
+
+      const leg = data.routes[0].legs[0];
+
+      return {
+        distancia: leg.distance.text,
+        duracion: leg.duration.text,
+      };
+    } catch (e) {
+      console.log("Error Google Directions:", e);
+      return null;
+    } finally {
+      setLoadingRuta(false);
+    }
+  };
+
+  
+  
 
 
   // ===========================
@@ -210,6 +203,12 @@ export default function HomeScreen() {
     load();
   }, [loc.location]);
 
+    useEffect(() => {
+    if (!coordsParaRuta) return;
+    
+  }, [coordsParaRuta]);
+
+
   // ============================================================
   // RENDER PRINCIPAL
   // ============================================================
@@ -234,6 +233,7 @@ export default function HomeScreen() {
           }}
           onFerreteriasChange={setNearFerreterias}
           focusedFerreteria={selectedFerreteria}
+          coordsParaRuta={coordsParaRuta} 
         />
       </View>
 
@@ -461,6 +461,7 @@ export default function HomeScreen() {
             lng: selectedFerreteria.longitud,
           };
 
+          // 🔥 1. Mostrar distancia REAL del Directions API
           const resultado = await obtenerTiempoRuta(origen, destino);
 
           if (resultado) {
@@ -469,7 +470,11 @@ export default function HomeScreen() {
               `🚗 ${resultado.distancia} • ⏱ ${resultado.duracion}`
             );
           }
+
+          // 🔥 2. Ordenar al mapa que dibuje la ruta
+          setCoordsParaRuta(destino);
         }}
+
         onVerCatalogo={() => {
           router.push(`/ferreteria/${selectedFerreteria?.id_ferreteria}`);
         }}
