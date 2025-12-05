@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
 import * as Location from 'expo-location';
+import { useEffect, useState } from 'react';
 
 type UserLocationState =
   | { status: 'idle' | 'requesting'; location: null; error: null }
