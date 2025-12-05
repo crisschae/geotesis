@@ -226,15 +226,15 @@ export function MapaFerreterias({
           <Marker
             key={f.id_ferreteria}
             coordinate={{
-              latitude: Number(f.latitud),
-              longitude: Number(f.longitud),
+              latitude: f.latitud,
+              longitude: f.longitud,
             }}
-            title={f.razon_social}
-            description={f.direccion ?? "Ferretería local"}
-            onPress={(e) => {
-              e.stopPropagation();
+            onPress={() => {
+              // 👉 1. Centrar mapa en la ferretería seleccionada
+             
+
+              // 👉 2. Notificar al index.tsx
               onFerreteriaPress?.(f);
-              
             }}
           >
             <Image

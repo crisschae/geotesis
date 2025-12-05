@@ -405,30 +405,54 @@ export default function HomeScreen() {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: 20 }}
               >
-                {nearFerreterias.length === 0 ? (
-                  <Text style={styles.helperText}>No hay ferreterías cercanas.</Text>
-                ) : (
-                  nearFerreterias.map((f) => (
-                    <TouchableOpacity
-                      key={f.id_ferreteria}
-                      style={styles.ferreteriaItem}
-                      activeOpacity={0.8}
-                      onPress={() => {
-                        setSelectedFerreteria(f);
-                        collapseSheet();
-                      }}
-                    >
-                      <View>
-                        <Text style={styles.ferreteriaName}>{f.razon_social}</Text>
-                        <Text style={styles.ferreteriaAddress}>{f.direccion}</Text>
-                      </View>
+                {nearFerreterias.map((f) => (
+                  <TouchableOpacity
+                    key={f.id_ferreteria}
+                    style={styles.ferreteriaItem}
+                    activeOpacity={0.9}
+                    onPress={async () => {
+                      if (!loc.location || !f) return;
 
+                      const origen = { lat: loc.location.latitude, lng: loc.location.longitude };
+                      const destino = { lat: f.latitud, lng: f.longitud };
+
+                      const result = await obtenerDistanciaGoogle(origen, destino);
+
+                      let newFerreteria = { ...f };
+
+                      if (result) {
+                        newFerreteria.distancia_google = result.distancia;
+                        newFerreteria.duracion_google = result.duracion;
+                      }
+
+                      // 🔥 ACTUALIZAR ARRAY COMPLETO
+                      setNearFerreterias((prev) =>
+                        prev.map((item) =>
+                          item.id_ferreteria === newFerreteria.id_ferreteria
+                            ? newFerreteria
+                            : item
+                        )
+                      );
+
+                      // 🔥 ACTUALIZAR selectedFerreteria DESPUÉS que nearFerreterias se actualice
+                      setTimeout(() => {
+                        setSelectedFerreteria(newFerreteria);
+                        collapseSheet();
+                      }, 0);
+                    }}
+
+                  >
+                    <View style={styles.ferreteriaInfo}>
+                      <Text style={styles.ferreteriaName}>{f.razon_social}</Text>
+
+                      {/* Distancia real con fallback */}
                       <Text style={styles.ferreteriaDistance}>
                         {f.distancia_google ?? `${f.distancia_km.toFixed(1)} km`}
                       </Text>
-                    </TouchableOpacity>
+                    </View>
+                  </TouchableOpacity>
                   ))
-                )}
+                }
               </Animated.ScrollView>
             </View>
           </View>
@@ -621,4 +645,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  ferreteriaInfo: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+  paddingVertical: 8,
+  paddingHorizontal: 4,
+},
+
 });

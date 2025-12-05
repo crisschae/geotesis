@@ -100,10 +100,16 @@ export function FerreteriaSheet({
 
   if (!ferreteria) return null;
 
-const distanciaTexto = ferreteria.distancia_google ?? `${ferreteria.distancia_km.toFixed(1)} km`;
+const distanciaTexto =
+  ferreteria.distancia_google ??
+  `${ferreteria.distancia_km.toFixed(1)} km`;
 
 
-  const tiempoTexto = ferreteria.duracion_google ?? "Tiempo no disponible";
+
+  const tiempoTexto =
+  ferreteria.duracion_google ??
+  "Tiempo no disponible";
+
 
   const precioTexto =
     precioMin != null
