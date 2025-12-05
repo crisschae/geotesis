@@ -171,6 +171,22 @@ export default function HomeScreen() {
       setLoadingRuta(false);
     }
   };
+  async function obtenerDistanciaGoogle(origen: any, destino: any) {
+    const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origen.lat},${origen.lng}&destination=${destino.lat},${destino.lng}&mode=driving&language=es&key=${GOOGLE_API_KEY}`;
+
+    const resp = await fetch(url);
+    const data = await resp.json();
+
+    if (!data.routes || data.routes.length === 0) return null;
+
+    const leg = data.routes[0].legs[0];
+
+    return {
+      distancia: leg.distance.text,   // EJ: "2.1 km"
+      duracion: leg.duration.text     // EJ: "6 min"
+    };
+  }
+
 
   
   
@@ -227,10 +243,31 @@ export default function HomeScreen() {
       <View style={styles.mapContainer}>
         <MapaFerreterias
           onMapPress={collapseSheet}
-          onFerreteriaPress={(f) => {
-            setSelectedFerreteria(f);
+          onFerreteriaPress={async (f) => {
+            if (!loc.location) return;
+
+            const origen = {
+              lat: loc.location.latitude,
+              lng: loc.location.longitude,
+            };
+
+            const destino = {
+              lat: f.latitud,
+              lng: f.longitud,
+            };
+
+            // 🔥 Obtener distancia real
+            const result = await obtenerDistanciaGoogle(origen, destino);
+
+            if (result) {
+              f.distancia_google = result.distancia; // EJ: "2.3 km"
+              f.duracion_google = result.duracion;   // EJ: "5 min"
+            }
+
+            setSelectedFerreteria({ ...f }); // actualiza el estado con los nuevos datos
             collapseSheet();
           }}
+
           onFerreteriasChange={setNearFerreterias}
           focusedFerreteria={selectedFerreteria}
           coordsParaRuta={coordsParaRuta} 
@@ -387,7 +424,7 @@ export default function HomeScreen() {
                       </View>
 
                       <Text style={styles.ferreteriaDistance}>
-                        {f.distancia_km.toFixed(1)} km
+                        {f.distancia_google ?? `${f.distancia_km.toFixed(1)} km`}
                       </Text>
                     </TouchableOpacity>
                   ))
