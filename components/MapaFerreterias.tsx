@@ -54,6 +54,22 @@ export function MapaFerreterias({
     return INITIAL_REGION;
   }, [loc]);
 
+  // ⭐ CENTRAR MAPA EN LA UBICACIÓN REAL APENAS LLEGUE EL GPS
+    useEffect(() => {
+      if (loc.status === "ready" && loc.location && mapRef.current) {
+        mapRef.current.animateToRegion(
+          {
+            latitude: loc.location.latitude,
+            longitude: loc.location.longitude,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          },
+          600
+        );
+      }
+    }, [loc.status]);
+
+
   // ============================================================
   // 🔹 Cargar ferreterías cercanas (radio 15 km)
   // ============================================================
