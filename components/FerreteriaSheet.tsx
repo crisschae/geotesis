@@ -70,23 +70,13 @@ export function FerreteriaSheet({
         setLoading(true);
 
         // 1) Distancia local (Haversine) como principal
-        const dLocal = haversineKm(
-          loc.location.latitude,
-          loc.location.longitude,
-          Number(ferreteria.latitud),
-          Number(ferreteria.longitud)
-        );
+
 
         // si por alguna razón fallara el cálculo, usa la distancia pre-calculada del registro
-        const dKm = Number.isFinite(dLocal) && dLocal > 0
-          ? dLocal
-          : ferreteria.distancia_km;
 
-        setDistanceKm(dKm);
+
 
         // 2) Tiempo estimado (modelo híbrido)
-        const min = estimarTiempoHibrido(dKm);
-        setDurationMin(min);
 
         // 3) Producto más barato (se mantiene igual)
         const prod = await getProductoMasBaratoPorFerreteria(ferreteria.id_ferreteria);
@@ -110,15 +100,16 @@ export function FerreteriaSheet({
 
   if (!ferreteria) return null;
 
-  const distanciaTexto =
-    distanceKm != null
-      ? `${distanceKm.toFixed(1)} km`
-      : `${ferreteria.distancia_km.toFixed(1)} km`;
+const distanciaTexto =
+  ferreteria.distancia_google ??
+  `${ferreteria.distancia_km.toFixed(1)} km`;
+
+
 
   const tiempoTexto =
-    durationMin != null
-      ? `${Math.round(durationMin)} min aprox.`
-      : 'Tiempo no disponible';
+  ferreteria.duracion_google ??
+  "Tiempo no disponible";
+
 
   const precioTexto =
     precioMin != null

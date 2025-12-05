@@ -8,6 +8,8 @@ export type FerreteriaCercana = {
   latitud: number;
   longitud: number;
   distancia_km: number;
+  distancia_google?: string; 
+  duracion_google?: string;
 };
 
 type ParamsBusquedaFerreterias = {
