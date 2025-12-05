@@ -1,19 +1,31 @@
-import { useLocalSearchParams, router } from "expo-router";
+import { supabase } from "@/lib/supabaseClient";
+import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
   ActivityIndicator,
-  ScrollView,
-  TouchableOpacity,
-  Image,
   Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { supabase } from "@/lib/supabaseClient";
 import { useCartStore } from "../../services/cartStore"; // 🟩 ZUSTAND
 
 const screenWidth = Dimensions.get("window").width;
+
+const ORANGE = "#ff8a29";
+const DARK_BG = "#111827";
+const CARD_BG = "#020617";
+
+type UnidadVenta = "unidad" | "lote10" | "lote50";
+
+const UNIDADES: { id: UnidadVenta; label: string; descripcion: string }[] = [
+  { id: "unidad", label: "Unidad", descripcion: "Precio por unidad" },
+  { id: "lote10", label: "Lote x10", descripcion: "Lote de 10 unidades" },
+  { id: "lote50", label: "Lote x50", descripcion: "Lote de 50 unidades" },
+];
 
 export default function ProductoScreen() {
   // ============================
@@ -22,6 +34,7 @@ export default function ProductoScreen() {
   const { id } = useLocalSearchParams();
   const [producto, setProducto] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [unidad, setUnidad] = useState<UnidadVenta>("unidad");
 
   // Zustand
   const addToCart = useCartStore((s) => s.addToCart);
@@ -121,7 +134,7 @@ export default function ProductoScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#8d6e63" />
+        <ActivityIndicator size="large" color={ORANGE} />
         <Text style={styles.muted}>Cargando producto...</Text>
       </View>
     );
@@ -163,21 +176,55 @@ export default function ProductoScreen() {
       {/* ====================== */}
       {/*       DETALLES         */}
       {/* ====================== */}
-      <Text style={styles.title}>{producto.nombre}</Text>
+      <View style={styles.infoCard}>
+        <Text style={styles.title}>{producto.nombre}</Text>
 
-      <Text style={styles.price}>
-        ${producto.precio?.toLocaleString("es-CL")}
-      </Text>
-
-      {producto.stock !== null && (
-        <Text style={styles.stock}>
-          Stock: {producto.stock > 0 ? producto.stock : "Agotado"}
+        <Text style={styles.price}>
+          ${producto.precio?.toLocaleString("es-CL")}
         </Text>
-      )}
 
-      {producto.descripcion && (
-        <Text style={styles.descripcion}>{producto.descripcion}</Text>
-      )}
+        <Text style={styles.unitText}>
+          {UNIDADES.find((u) => u.id === unidad)?.descripcion ?? "Precio por unidad"}
+        </Text>
+
+        {producto.stock !== null && (
+          <Text style={styles.stock}>
+            Stock: {producto.stock > 0 ? producto.stock : "Agotado"}
+          </Text>
+        )}
+      </View>
+
+      {/* Selector de unidad de venta */}
+      <View style={styles.unitSelectorCard}>
+        <Text style={styles.unitTitle}>Unidad de venta</Text>
+        <View style={styles.unitRow}>
+          {UNIDADES.map((u) => {
+            const active = u.id === unidad;
+            return (
+              <TouchableOpacity
+                key={u.id}
+                onPress={() => setUnidad(u.id)}
+                style={[
+                  styles.unitChip,
+                  active && styles.unitChipActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.unitChipText,
+                    active && styles.unitChipTextActive,
+                  ]}
+                >
+                  {u.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+        {producto.descripcion && (
+          <Text style={styles.descripcion}>{producto.descripcion}</Text>
+        )}
+      </View>
 
       {/* ====================== */}
       {/*  BOTÓN AGREGAR CARRITO */}
@@ -219,13 +266,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: "#111827",
+    backgroundColor: DARK_BG,
   },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#111827",
+    backgroundColor: DARK_BG,
   },
   muted: {
     color: "#9CA3AF",
@@ -237,7 +284,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   btn: {
-    backgroundColor: "#8d6e63",
+    backgroundColor: ORANGE,
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderRadius: 10,
@@ -278,9 +325,65 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 
+  infoCard: {
+    marginTop: 18,
+  },
+
+  unitText: {
+    color: "#9CA3AF",
+    marginTop: 4,
+    fontSize: 13,
+  },
+
+  unitSelectorCard: {
+    marginTop: 16,
+    padding: 14,
+    backgroundColor: CARD_BG,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#374151",
+  },
+
+  unitTitle: {
+    color: "#E5E7EB",
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+
+  unitRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+
+  unitChip: {
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: "#4b5563",
+    backgroundColor: CARD_BG,
+  },
+
+  unitChipActive: {
+    borderColor: ORANGE,
+    backgroundColor: ORANGE,
+  },
+
+  unitChipText: {
+    color: "#E5E7EB",
+    fontSize: 13,
+  },
+
+  unitChipTextActive: {
+    color: "#111827",
+    fontWeight: "600",
+  },
+
   // BOTÓN CARRITO
   cartBtn: {
-    backgroundColor: "#8d6e63",
+    backgroundColor: ORANGE,
     paddingVertical: 14,
     borderRadius: 10,
     marginTop: 22,
@@ -296,7 +399,7 @@ const styles = StyleSheet.create({
   card: {
     marginTop: 20,
     padding: 14,
-    backgroundColor: "#1f2937",
+    backgroundColor: CARD_BG,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "#2a3443",
