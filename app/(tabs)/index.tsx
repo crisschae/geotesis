@@ -281,7 +281,7 @@ export default function HomeScreen() {
           const { height } = e.nativeEvent.layout;
           setSheetHeight(height);
         }}
-        {...panResponder.panHandlers}
+        
         style={[
           styles.bottomCard,
           {
@@ -297,7 +297,7 @@ export default function HomeScreen() {
         ]}
       >
         {/* 🟦 HANDLE */}
-        <TouchableOpacity activeOpacity={0.8} onPress={toggleSheet}>
+        <TouchableOpacity activeOpacity={0.8} onPress={toggleSheet} {...panResponder.panHandlers}  >
           <View style={styles.sheetHandleWrapper}>
             <View style={styles.sheetHandle} />
           </View>
@@ -309,7 +309,7 @@ export default function HomeScreen() {
             <Text style={styles.searchIcon}>⌕</Text>
           </View>
           <Text style={{ color: "#9CA3AF", fontSize: 15 }}>
-            Buscar productos o ferreterías...
+            Buscar productos.
           </Text>
         </TouchableOpacity>
 
