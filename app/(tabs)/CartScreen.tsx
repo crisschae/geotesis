@@ -170,7 +170,10 @@ export default function CartScreen() {
         .eq("id_pedido", pedido.id_pedido);
 
       clearCart();
-      Alert.alert("🎉 Pago exitoso", "Gracias por tu compra");
+      Alert.alert(
+        "Compra realizada con éxito",
+        "Te enviaremos un correo con las instrucciones de retiro de tu pedido."
+      );
       router.replace("/"); // vuelve al home
     } catch (error: any) {
       console.log("❌ ERROR STRIPE:", error);
