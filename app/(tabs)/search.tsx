@@ -71,7 +71,7 @@ export default function SearchScreen() {
 
   useEffect(() => {
     async function cargarFerreterias() {
-      const { data } = await supabase.from("ferreteria").select("id_ferreteria, razon_social");
+      const { data } = await supabase.from("v_ferreteria_visible").select("id_ferreteria, razon_social");
       if (data) setFerreterias(data);
     }
     cargarFerreterias();
@@ -124,20 +124,16 @@ export default function SearchScreen() {
   async function buscar(texto: string) {
     setLoading(true);
 
-    let consulta = supabase
-      .from("producto")
-      .select(`
-        id_producto,
-        nombre,
-        precio,
-        imagenes,
-        ferreteria (
-          razon_social
-        ),
-        categoria (
-          nombre
-        )
-      `);
+  let consulta = supabase
+    .from("v_producto_visible")
+    .select(`
+      id_producto,
+      nombre,
+      precio,
+      imagenes,
+      id_ferreteria,
+      id_categoria
+    `);
 
     // 🔎 FILTRO POR TEXTO
     if (texto && texto.trim().length > 0) {
@@ -165,18 +161,20 @@ export default function SearchScreen() {
     const { data, error } = await consulta;
 
     if (!error && data) {
-      const normalizado = data.map((p: any) => ({
-        ...p,
-        ferreteria: Array.isArray(p.ferreteria)
-          ? p.ferreteria[0] ?? null
-          : p.ferreteria ?? null,
-        categoria: Array.isArray(p.categoria)
-          ? p.categoria[0] ?? null
-          : p.categoria ?? null,
-      }));
+        const normalizado = data.map((p: any) => {
+          const ferre = ferreterias.find((f) => f.id_ferreteria === p.id_ferreteria) || null;
+          return {
+            id_producto: p.id_producto,
+            nombre: p.nombre,
+            precio: p.precio,
+            imagenes: p.imagenes,
+            ferreteria: ferre ? { razon_social: ferre.razon_social } : null,
+            // Si más adelante quieres mostrar nombre de categoría, tendrás que
+            // traerlo por separado o crear otra vista con join.
+          };
+        });
+        setResultados(normalizado as ProductoBusqueda[]);
 
-      setResultados(normalizado as ProductoBusqueda[]);
-    }
 
     setLoading(false);
   }
@@ -595,4 +593,4 @@ export default function SearchScreen() {
       </View>
     </SafeAreaView>
   );
-}
+  }}

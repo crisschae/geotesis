@@ -79,17 +79,20 @@ export function MapaFerreterias({
 
       try {
         setLoadingFerreterias(true);
+        
 
         const data = await getFerreteriasCercanas({
           latitud: loc.location.latitude,
           longitud: loc.location.longitude,
-          radioKm: 15, // ← RADIO REAL 15 KM
+          radioKm: 200, // ← RADIO REAL 15 KM
+          
         });
 
         setFerreterias(data);
         onFerreteriasChange?.(data);
       } catch (e) {
         console.log("Error cargando ferreterías cercanas:", e);
+        
       } finally {
         setLoadingFerreterias(false);
       }
