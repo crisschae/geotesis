@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, View, Image, Animated } from "react-native";
-import MapView, { Marker, PROVIDER_GOOGLE, Region, Polyline } from "react-native-maps";
+import { ActivityIndicator, Animated, Image, StyleSheet, View } from "react-native";
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE, Region } from "react-native-maps";
 
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { FerreteriaCercana, getFerreteriasCercanas } from "@/lib/ferreterias";
@@ -20,6 +20,7 @@ type Props = {
   onFerreteriasChange?: (ferreterias: FerreteriaCercana[]) => void;
   focusedFerreteria?: FerreteriaCercana | null;
   coordsParaRuta?: { lat: number; lng: number } | null;
+  centerRequest?: number;
 };
 
 export function MapaFerreterias({
@@ -28,6 +29,7 @@ export function MapaFerreterias({
   onFerreteriasChange,
   focusedFerreteria,
   coordsParaRuta, 
+  centerRequest,
 }:Props) {
   const loc = useUserLocation();
   const [ferreterias, setFerreterias] = useState<FerreteriaCercana[]>([]);
@@ -97,6 +99,24 @@ export function MapaFerreterias({
 
     load();
   }, [loc.status, loc.location]);
+
+  // ============================================================
+  // 🔹 Centrar al usuario cuando se solicite
+  // ============================================================
+  useEffect(() => {
+    if (!centerRequest) return;
+    if (!loc.location || !mapRef.current) return;
+
+    mapRef.current.animateToRegion(
+      {
+        latitude: loc.location.latitude,
+        longitude: loc.location.longitude,
+        latitudeDelta: 0.02,
+        longitudeDelta: 0.02,
+      },
+      350
+    );
+  }, [centerRequest, loc.location]);
 
   // ============================================================
   // 🔹 Enfocar ferretería seleccionada
@@ -254,7 +274,7 @@ export function MapaFerreterias({
             }}
           >
             <Image
-              source={require("../assets/images/icon-pin2.png")}
+              source={require("../assets/images/icon-pin.png")}
               style={{ width: 43, height: 43 }}
               resizeMode="contain"
             />

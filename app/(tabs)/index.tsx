@@ -1,9 +1,8 @@
 import { FerreteriaSheet } from "@/components/FerreteriaSheet";
 import { MapaFerreterias } from "@/components/MapaFerreterias";
+import { useUserLocation } from "@/hooks/useUserLocation";
 import type { FerreteriaCercana } from "@/lib/ferreterias";
 import { getProductoMasBaratoPorFerreteria, getProductosCercanos } from "@/lib/productos";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -11,14 +10,13 @@ import {
   Alert,
   Animated,
   Image,
+  PanResponder,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import { PanResponder } from "react-native";
-import { useUserLocation } from "@/hooks/useUserLocation";
 
 
 
@@ -56,6 +54,7 @@ export default function HomeScreen() {
   const [loadingRuta, setLoadingRuta] = useState(false);
   const [query, setQuery] = useState("");
   const [coordsParaRuta, setCoordsParaRuta] = useState<{ lat: number; lng: number } | null>(null);
+  const [centerRequest, setCenterRequest] = useState(0);
 
   // ===========================
   // ANIMACIÓN DE OVERLAY BÚSQUEDA
@@ -233,10 +232,14 @@ export default function HomeScreen() {
 
       {/* 📍 HEADER */}
       <View style={styles.header}>
-        <View style={styles.locationButton}>
+        <TouchableOpacity
+          style={styles.locationButton}
+          activeOpacity={0.85}
+          onPress={() => setCenterRequest((n) => n + 1)}
+        >
           <Text style={styles.locationIcon}>📍</Text>
           <Text style={styles.locationText}>Mi ubicación</Text>
-        </View>
+        </TouchableOpacity>
       </View>
 
       {/* 🗺️ MAPA */}
@@ -271,6 +274,7 @@ export default function HomeScreen() {
           onFerreteriasChange={setNearFerreterias}
           focusedFerreteria={selectedFerreteria}
           coordsParaRuta={coordsParaRuta} 
+          centerRequest={centerRequest}
         />
       </View>
 
@@ -449,7 +453,7 @@ export default function HomeScreen() {
 
                       {/* Distancia real con fallback */}
                       <Text style={styles.ferreteriaDistance}>
-                        
+                        {f.distancia_google ?? `${f.distancia_km.toFixed(1)} km`}
                       </Text>
                     </View>
                   </TouchableOpacity>
