@@ -1,3 +1,4 @@
+// app/(tabs)/index.tsx
 import { FerreteriaSheet } from "@/components/FerreteriaSheet";
 import { MapaFerreterias } from "@/components/MapaFerreterias";
 import { useUserLocation } from "@/hooks/useUserLocation";

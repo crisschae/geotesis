@@ -1,43 +1,34 @@
-import { supabase } from './supabaseClient';
+import { supabase } from "./supabaseClient";
 
-export type FerreteriaCercana = {
+export interface FerreteriaCercana {
   id_ferreteria: string;
   razon_social: string;
-  direccion: string | null;
-  telefono: string | null;
   latitud: number;
   longitud: number;
   distancia_km: number;
-  distancia_google?: string; 
-  duracion_google?: string;
-};
-
-type ParamsBusquedaFerreterias = {
-  latitud: number;
-  longitud: number;
-  radioKm?: number;
-  busqueda?: string;
-};
+  // ... otros campos
+}
 
 export async function getFerreteriasCercanas({
   latitud,
   longitud,
-  radioKm = 5,
-  busqueda,
-}: ParamsBusquedaFerreterias): Promise<FerreteriaCercana[]> {
-  const { data, error } = await supabase.rpc('buscar_ferreterias_cercanas', {
-    p_lat: latitud,
-    p_lng: longitud,
-    p_radio_km: radioKm,
-    p_busqueda: busqueda ?? null,
+  radioKm = 20,
+}: {
+  latitud: number;
+  longitud: number;
+  radioKm: number;
+}) {
+  // Llamamos a la función SQL que acabamos de crear
+  const { data, error } = await supabase.rpc("get_ferreterias_cercanas", {
+    lat: latitud,
+    long: longitud,
+    radio_km: radioKm,
   });
 
   if (error) {
-    console.error('Error al buscar ferreterías cercanas', error);
-    throw error;
+    console.error("Error obteniendo ferreterías:", error);
+    return [];
   }
 
-  return (data ?? []) as FerreteriaCercana[];
+  return data as FerreteriaCercana[];
 }
-
-
