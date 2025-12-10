@@ -1,3 +1,4 @@
+// app/(tabs)/CartScreen.tsx
 import { useStripe } from "@stripe/stripe-react-native";
 import { useRouter } from "expo-router";
 import { useState } from "react";

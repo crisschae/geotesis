@@ -1,3 +1,4 @@
+// services/cartStore.ts
 import { create } from "zustand";
 import { Producto } from "../lib/types";
 
@@ -20,7 +21,7 @@ export const useCartStore = create<CartState>((set, get) => ({
         (p) => p.id_producto === item.id_producto
       );
 
-      // 🔥 Si el producto trae ferreteria, úsala para obtener el id
+      // 🔥 Normalizamos el ID de la ferretería del item entrante
       const productoConFerreteria = {
         ...item,
         id_ferreteria:
@@ -33,7 +34,15 @@ export const useCartStore = create<CartState>((set, get) => ({
         return {
           cart: state.cart.map((p) =>
             p.id_producto === item.id_producto
-              ? { ...p, quantity: (p.quantity ?? 1) + qty }
+              ? { 
+                  ...p, 
+                  quantity: (p.quantity ?? 1) + qty,
+                  // ✅ CORRECCIÓN CRÍTICA AQUÍ:
+                  // Actualizamos el precio al nuevo valor que viene de la cotización seleccionada
+                  precio: item.precio, 
+                  // Actualizamos la ferretería por si el usuario cambió de proveedor
+                  id_ferreteria: productoConFerreteria.id_ferreteria 
+                }
               : p
           ),
         };
