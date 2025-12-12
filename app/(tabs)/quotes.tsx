@@ -1,3 +1,4 @@
+// app/(tabs)/quotes.tsx
 import { supabase } from "@/lib/supabaseClient";
 import { useCartStore } from "@/services/cartStore";
 import { useRouter } from "expo-router";
@@ -39,6 +40,7 @@ export default function QuotesScreen() {
   const [addingId, setAddingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [clienteId, setClienteId] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<'cost' | 'time'>('cost'); // Default to cost
   const addToCart = useCartStore((s) => s.addToCart);
   const router = useRouter();
 
@@ -165,11 +167,38 @@ export default function QuotesScreen() {
   const renderItem = ({ item }: { item: Cotizacion }) => {
     const expira = new Date(item.expires_at);
     const vencida = expira.getTime() < Date.now();
-    const costoViaje = item.costo_viaje ?? 0;
-    const subtotal = item.subtotal_productos ?? item.total_estimada ?? 0;
-    const costoTotal = item.costo_total ?? subtotal + costoViaje;
-    const ferreName =
-      (item.detalle_costos && item.detalle_costos.ferreteria) || "Ferretería recomendada";
+
+    // Assume detalle_costos is an array of options
+    const options = Array.isArray(item.detalle_costos) ? item.detalle_costos : [item.detalle_costos].filter(Boolean);
+
+    // Sort options based on sortBy
+    const sortedOptions = options.sort((a, b) => {
+      if (sortBy === 'cost') {
+        return (a.total || 0) - (b.total || 0);
+      } else {
+        return (a.duracion || 0) - (b.duracion || 0);
+      }
+    });
+
+    const bestOption = sortedOptions[0];
+    const nextBest = sortedOptions[1];
+
+    const subtotal = bestOption?.subtotal ?? item.subtotal_productos ?? item.total_estimada ?? 0;
+    const costoViaje = bestOption?.costo_viaje ?? item.costo_viaje ?? 0;
+    const costoTotal = bestOption?.total ?? item.costo_total ?? subtotal + costoViaje;
+    const distancia = bestOption?.distancia ?? item.distancia_km ?? 0;
+    const duracion = bestOption?.duracion ?? item.duracion_min ?? 0;
+    const ferreName = bestOption?.ferreteria || "Ferretería recomendada";
+
+    // Calculate savings
+    let savings = 0;
+    let savingsPercent = 0;
+    if (nextBest) {
+      const nextTotal = nextBest.total || 0;
+      savings = nextTotal - costoTotal;
+      savingsPercent = nextTotal > 0 ? (savings / nextTotal) * 100 : 0;
+    }
+
     return (
       <View style={styles.card}>
         <View style={[styles.cardHeader, { marginBottom: 6, flexDirection: "column", gap: 6 }]}>
@@ -185,6 +214,11 @@ export default function QuotesScreen() {
               {vencida ? "Expirada" : item.estado}
             </Text>
             <Text style={styles.miniBadge}>Ferretería: {ferreName}</Text>
+            {savings > 0 && (
+              <Text style={styles.savingsBadge}>
+                Ahorro: ${savings.toFixed(2)} ({savingsPercent.toFixed(1)}%)
+              </Text>
+            )}
           </View>
         </View>
         <View style={styles.metricsRow}>
@@ -196,7 +230,7 @@ export default function QuotesScreen() {
             <Text style={styles.metricLabel}>Viaje</Text>
             <Text style={styles.metricValue}>${costoViaje.toFixed(2)}</Text>
             <Text style={styles.metricHint}>
-              {item.distancia_km?.toFixed(1) ?? "—"} km • {item.duracion_min?.toFixed(0) ?? "—"} min
+              {distancia.toFixed(1)} km • {duracion.toFixed(0)} min
             </Text>
           </View>
           <View style={[styles.metricBox, { borderColor: ORANGE }]}>
@@ -244,6 +278,24 @@ export default function QuotesScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Cotizaciones</Text>
+      <View style={styles.sortRow}>
+        <TouchableOpacity
+          style={[styles.sortButton, sortBy === 'cost' && styles.sortButtonActive]}
+          onPress={() => setSortBy('cost')}
+        >
+          <Text style={[styles.sortButtonText, sortBy === 'cost' && styles.sortButtonTextActive]}>
+            Menor costo
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.sortButton, sortBy === 'time' && styles.sortButtonActive]}
+          onPress={() => setSortBy('time')}
+        >
+          <Text style={[styles.sortButtonText, sortBy === 'time' && styles.sortButtonTextActive]}>
+            Menor tiempo
+          </Text>
+        </TouchableOpacity>
+      </View>
       <TouchableOpacity style={styles.cta} onPress={() => router.push("/(tabs)/search")}>
         <Text style={styles.ctaText}>Crear cotización</Text>
         <Text style={styles.ctaSub}>Busca productos por nombre y guarda tu cotización</Text>
@@ -466,5 +518,40 @@ const styles = StyleSheet.create({
     color: "#1f2937",
     fontSize: 13,
     fontWeight: "500",
+  },
+  sortRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 6,
+  },
+  sortButton: {
+    flex: 1,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#1f2937",
+    paddingVertical: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sortButtonActive: {
+    borderColor: ORANGE,
+    backgroundColor: ORANGE,
+  },
+  sortButtonText: {
+    color: "#E5E7EB",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  sortButtonTextActive: {
+    color: DARK_BG,
+  },
+  savingsBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    backgroundColor: "#10b981",
+    color: "#F9FAFB",
+    fontSize: 11,
+    fontWeight: "600",
   },
 });

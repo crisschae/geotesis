@@ -1,11 +1,10 @@
+// components/MapaFerreterias.tsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, View, Image, Animated } from "react-native";
-import MapView, { Marker, PROVIDER_GOOGLE, Region, Polyline } from "react-native-maps";
+import { ActivityIndicator, Animated, Image, StyleSheet, View } from "react-native";
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE, Region } from "react-native-maps";
 
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { FerreteriaCercana, getFerreteriasCercanas } from "@/lib/ferreterias";
-
-
 
 const INITIAL_REGION = {
   latitude: -36.6066616,
@@ -20,6 +19,7 @@ type Props = {
   onFerreteriasChange?: (ferreterias: FerreteriaCercana[]) => void;
   focusedFerreteria?: FerreteriaCercana | null;
   coordsParaRuta?: { lat: number; lng: number } | null;
+  centerRequest?: number;
 };
 
 export function MapaFerreterias({
@@ -28,18 +28,17 @@ export function MapaFerreterias({
   onFerreteriasChange,
   focusedFerreteria,
   coordsParaRuta, 
-}:Props) {
+  centerRequest,
+}: Props) {
   const loc = useUserLocation();
   const [ferreterias, setFerreterias] = useState<FerreteriaCercana[]>([]);
   const [loadingFerreterias, setLoadingFerreterias] = useState(false);
 
   const mapRef = useRef<MapView | null>(null);
   const sheetAnim = useRef(new Animated.Value(0)).current;
-  const [isCollapsed, setIsCollapsed] = useState(false);
 
   // ➤ Ruta en el mapa
   const [routeCoords, setRouteCoords] = useState<{ latitude: number; longitude: number }[]>([]);
-  
 
   // 📍 Región inicial: SOLO GPS
   const region = useMemo(() => {
@@ -55,19 +54,19 @@ export function MapaFerreterias({
   }, [loc]);
 
   // ⭐ CENTRAR MAPA EN LA UBICACIÓN REAL APENAS LLEGUE EL GPS
-    useEffect(() => {
-      if (loc.status === "ready" && loc.location && mapRef.current) {
-        mapRef.current.animateToRegion(
-          {
-            latitude: loc.location.latitude,
-            longitude: loc.location.longitude,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          },
-          600
-        );
-      }
-    }, [loc.status]);
+  useEffect(() => {
+    if (loc.status === "ready" && loc.location && mapRef.current) {
+      mapRef.current.animateToRegion(
+        {
+          latitude: loc.location.latitude,
+          longitude: loc.location.longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        },
+        600
+      );
+    }
+  }, [loc.status]);
 
 
   // ============================================================
@@ -79,17 +78,22 @@ export function MapaFerreterias({
 
       try {
         setLoadingFerreterias(true);
+        console.log("📍 Buscando ferreterías en:", loc.location);
 
         const data = await getFerreteriasCercanas({
           latitud: loc.location.latitude,
           longitud: loc.location.longitude,
-          radioKm: 15, // ← RADIO REAL 15 KM
+          radioKm: 15, 
         });
+
+        console.log("✅ Ferreterías encontradas:", data.length);
+        // Descomenta esto para ver si las coordenadas vienen como string o número
+        // if(data.length > 0) console.log("Ejemplo dato:", data[0]);
 
         setFerreterias(data);
         onFerreteriasChange?.(data);
       } catch (e) {
-        console.log("Error cargando ferreterías cercanas:", e);
+        console.log("❌ Error cargando ferreterías cercanas:", e);
       } finally {
         setLoadingFerreterias(false);
       }
@@ -99,15 +103,39 @@ export function MapaFerreterias({
   }, [loc.status, loc.location]);
 
   // ============================================================
+  // 🔹 Centrar al usuario cuando se solicite
+  // ============================================================
+  useEffect(() => {
+    if (!centerRequest) return;
+    if (!loc.location || !mapRef.current) return;
+
+    mapRef.current.animateToRegion(
+      {
+        latitude: loc.location.latitude,
+        longitude: loc.location.longitude,
+        latitudeDelta: 0.02,
+        longitudeDelta: 0.02,
+      },
+      350
+    );
+  }, [centerRequest, loc.location]);
+
+  // ============================================================
   // 🔹 Enfocar ferretería seleccionada
   // ============================================================
   useEffect(() => {
     if (!focusedFerreteria || !mapRef.current) return;
 
     const f = focusedFerreteria;
+    // Aseguramos conversión a Number aquí también
+    const lat = Number(f.latitud);
+    const lng = Number(f.longitud);
+
+    if (isNaN(lat) || isNaN(lng)) return;
+
     const region: Region = {
-      latitude: Number(f.latitud),
-      longitude: Number(f.longitud),
+      latitude: lat,
+      longitude: lng,
       latitudeDelta: 0.02,
       longitudeDelta: 0.02,
     };
@@ -115,7 +143,7 @@ export function MapaFerreterias({
     mapRef.current.animateToRegion(region, 350);
   }, [focusedFerreteria]);
 
-    useEffect(() => {
+  useEffect(() => {
     if (!coordsParaRuta) return;
     generarRuta(coordsParaRuta);
   }, [coordsParaRuta]);
@@ -132,25 +160,21 @@ export function MapaFerreterias({
 
     while (index < encoded.length) {
       let b, shift = 0, result = 0;
-
       do {
         b = encoded.charCodeAt(index++) - 63;
         result |= (b & 0x1f) << shift;
         shift += 5;
       } while (b >= 0x20);
-
       const dlat = result & 1 ? ~(result >> 1) : result >> 1;
       lat += dlat;
 
       shift = 0;
       result = 0;
-
       do {
         b = encoded.charCodeAt(index++) - 63;
         result |= (b & 0x1f) << shift;
         shift += 5;
       } while (b >= 0x20);
-
       const dlng = result & 1 ? ~(result >> 1) : result >> 1;
       lng += dlng;
 
@@ -159,46 +183,34 @@ export function MapaFerreterias({
         longitude: lng / 1e5,
       });
     }
-
     return points;
   }
 
   // ============================================================
   // 🔹 Generar ruta visual
   // ============================================================
+  async function generarRuta(dest: { lat: number; lng: number }) {
+    if (!loc?.location) return;
 
-    async function generarRuta(dest: { lat: number; lng: number }) {
-      if (!loc?.location) return;
+    const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${loc.location.latitude},${loc.location.longitude}&destination=${dest.lat},${dest.lng}&mode=driving&language=es&key=${process.env.EXPO_PUBLIC_GOOGLE_API_KEY}`;
 
-      // 1️⃣ Construir la URL correctamente
-      const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${loc.location.latitude},${loc.location.longitude}&destination=${dest.lat},${dest.lng}&mode=driving&language=es&key=${process.env.EXPO_PUBLIC_GOOGLE_API_KEY}`;
+    try {
+      const resp = await fetch(url);
+      const data = await resp.json();
 
-      console.log("URL Directions:", url);
-
-      try {
-        // 2️⃣ Hacer la petición
-        const resp = await fetch(url);
-        const data = await resp.json();
-
-        console.log("Google Directions Response:", data);
-
-        // 3️⃣ Validar la respuesta
-        if (!data.routes || data.routes.length === 0) {
-          console.log("❌ No se encontraron rutas en Google Directions:", data);
-          return;
-        }
-
-        // 4️⃣ Decodificar polyline
-        const points = data.routes[0].overview_polyline.points;
-        const decoded = decodePolyline(points);
-
-        // 5️⃣ Guardar coordenadas para dibujar la ruta
-        setRouteCoords(decoded);
-
-      } catch (error) {
-        console.log("❌ Error generando ruta:", error);
+      if (!data.routes || data.routes.length === 0) {
+        console.log("❌ No se encontraron rutas.");
+        return;
       }
+
+      const points = data.routes[0].overview_polyline.points;
+      const decoded = decodePolyline(points);
+      setRouteCoords(decoded);
+
+    } catch (error) {
+      console.log("❌ Error generando ruta:", error);
     }
+  }
 
   // ============================================================
   // 🔹 RENDER
@@ -221,45 +233,47 @@ export function MapaFerreterias({
         showsUserLocation
         showsMyLocationButton
         toolbarEnabled={false}
-
-        // ❌ No mostrar ciudades, POI ni edificios
         showsPointsOfInterest={false}
         showsBuildings={false}
         showsTraffic={false}
-
         onPress={() => {
           Animated.timing(sheetAnim, {
             toValue: 1,
             duration: 200,
             useNativeDriver: true,
           }).start();
-          setIsCollapsed(true);
           onMapPress?.();
         }}
       >
         {/* 🟧 Marcadores de ferreterías */}
-        {ferreterias.map((f) => (
-          <Marker
-            key={f.id_ferreteria}
-            coordinate={{
-              latitude: f.latitud,
-              longitude: f.longitud,
-            }}
-            onPress={() => {
-              // 👉 1. Centrar mapa en la ferretería seleccionada
-             
+        {ferreterias.map((f) => {
+          // 🔥 CORRECCIÓN CLAVE: Convertir a Number explícitamente
+          const lat = Number(f.latitud);
+          const lng = Number(f.longitud);
 
-              // 👉 2. Notificar al index.tsx
-              onFerreteriaPress?.(f);
-            }}
-          >
-            <Image
-              source={require("../assets/images/icon-pin2.png")}
-              style={{ width: 43, height: 43 }}
-              resizeMode="contain"
-            />
-          </Marker>
-        ))}
+          // Si las coordenadas no son válidas, no renderizamos el marcador para evitar crash
+          if (isNaN(lat) || isNaN(lng)) return null;
+
+          return (
+            <Marker
+              key={f.id_ferreteria}
+              coordinate={{
+                latitude: lat,
+                longitude: lng,
+              }}
+              onPress={() => {
+                onFerreteriaPress?.(f);
+              }}
+            >
+              {/* Intentamos cargar la imagen personalizada */}
+              <Image
+                source={require("../assets/images/icon-pin2.png")}
+                style={{ width: 43, height: 43 }}
+                resizeMode="contain"
+              />
+            </Marker>
+          );
+        })}
 
         {/* 🛣️ Ruta dibujada */}
         {routeCoords.length > 0 && (
@@ -280,9 +294,6 @@ export function MapaFerreterias({
   );
 }
 
-// ========================================================
-// 🔹 ESTILOS
-// ========================================================
 const styles = StyleSheet.create({
   container: { flex: 1, overflow: "hidden" },
   map: { flex: 1 },
