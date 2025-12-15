@@ -15,9 +15,19 @@ import { useCartStore } from "../../services/cartStore"; // 🟩 ZUSTAND
 
 const screenWidth = Dimensions.get("window").width;
 
-const ORANGE = "#ff8a29";
-const DARK_BG = "#111827";
-const CARD_BG = "#020617";
+const PALETTE = {
+  base: "#ffffff",
+  primary: "#986132",
+  secondary: "#9C6535",
+  soft: "#f7f1ea",
+  text: "#000000",
+  textSoft: "#4b3323",
+  border: "#edd8c4",
+  accentLight: "rgba(152, 97, 50, 0.10)",
+};
+const ORANGE = PALETTE.primary;
+const DARK_BG = PALETTE.base;
+const CARD_BG = PALETTE.soft;
 
 type UnidadVenta = "unidad" ;
 
@@ -269,7 +279,7 @@ const styles = StyleSheet.create({
     backgroundColor: DARK_BG,
   },
   muted: {
-    color: "#9CA3AF",
+    color: PALETTE.textSoft,
     marginTop: 6,
   },
   error: {
@@ -284,7 +294,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   btnText: {
-    color: "#fff",
+    color: PALETTE.base,
     fontWeight: "600",
   },
 
@@ -298,23 +308,23 @@ const styles = StyleSheet.create({
 
   // TEXTOS
   title: {
-    color: "#fff",
+    color: PALETTE.text,
     fontSize: 26,
     fontWeight: "700",
     marginTop: 18,
   },
   price: {
-    color: "#fff",
+    color: PALETTE.text,
     fontSize: 22,
     marginTop: 8,
     fontWeight: "600",
   },
   stock: {
-    color: "#9CA3AF",
+    color: PALETTE.textSoft,
     marginTop: 4,
   },
   descripcion: {
-    color: "#D1D5DB",
+    color: PALETTE.textSoft,
     marginTop: 12,
     fontSize: 16,
   },
@@ -324,7 +334,7 @@ const styles = StyleSheet.create({
   },
 
   unitText: {
-    color: "#9CA3AF",
+    color: PALETTE.textSoft,
     marginTop: 4,
     fontSize: 13,
   },
@@ -335,11 +345,11 @@ const styles = StyleSheet.create({
     backgroundColor: CARD_BG,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#374151",
+    borderColor: PALETTE.border,
   },
 
   unitTitle: {
-    color: "#E5E7EB",
+    color: PALETTE.text,
     fontSize: 14,
     fontWeight: "600",
     marginBottom: 8,
@@ -356,7 +366,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: "#4b5563",
+    borderColor: PALETTE.secondary,
     backgroundColor: CARD_BG,
   },
 
@@ -366,12 +376,12 @@ const styles = StyleSheet.create({
   },
 
   unitChipText: {
-    color: "#E5E7EB",
+    color: PALETTE.text,
     fontSize: 13,
   },
 
   unitChipTextActive: {
-    color: "#111827",
+    color: PALETTE.base,
     fontWeight: "600",
   },
 
@@ -385,7 +395,7 @@ const styles = StyleSheet.create({
   },
   cartBtnText: {
     textAlign: "center",
-    color: "#fff",
+    color: PALETTE.base,
     fontSize: 18,
     fontWeight: "bold",
   },
@@ -401,10 +411,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#0b1220",
+    backgroundColor: PALETTE.base,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#2d3748",
+    borderColor: PALETTE.border,
     paddingHorizontal: 10,
     paddingVertical: 8,
     alignSelf: "center",
@@ -413,19 +423,19 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: "#1f2937",
+    backgroundColor: PALETTE.soft,
     borderWidth: 1,
-    borderColor: "#2d3748",
+    borderColor: PALETTE.border,
     justifyContent: "center",
     alignItems: "center",
   },
   qtyBtnText: {
-    color: "#F9FAFB",
+    color: PALETTE.text,
     fontSize: 18,
     fontWeight: "700",
   },
   qtyInputText: {
-    color: "#F9FAFB",
+    color: PALETTE.text,
     fontSize: 16,
     fontWeight: "700",
   },
@@ -437,16 +447,16 @@ const styles = StyleSheet.create({
     backgroundColor: CARD_BG,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#2a3443",
+    borderColor: PALETTE.border,
   },
   cardTitle: {
-    color: "#fff",
+    color: PALETTE.text,
     fontSize: 18,
     fontWeight: "600",
     marginBottom: 6,
   },
   cardText: {
-    color: "#D1D5DB",
+    color: PALETTE.textSoft,
     marginTop: 2,
   },
 });

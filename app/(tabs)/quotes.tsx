@@ -14,9 +14,20 @@ import {
   View,
 } from "react-native";
 
-const DARK_BG = "#111827";
-const CARD_BG = "#0f172a";
-const ORANGE = "#ff8a29";
+const PALETTE = {
+  base: "#ffffff",
+  primary: "#986132",
+  secondary: "#9C6535",
+  soft: "#f7f1ea",
+  text: "#000000",
+  textSoft: "#4b3323",
+  border: "#edd8c4",
+  accentMedium: "rgba(152, 97, 50, 0.18)",
+  accentLight: "rgba(152, 97, 50, 0.10)",
+};
+const DARK_BG = PALETTE.base;
+const CARD_BG = PALETTE.soft;
+const ORANGE = PALETTE.primary;
 
 type Cotizacion = {
   id_cotizacion: string;
@@ -42,6 +53,8 @@ export default function QuotesScreen() {
   const [clienteId, setClienteId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'cost' | 'time'>('cost'); // Default to cost
   const addToCart = useCartStore((s) => s.addToCart);
+  const getCartState = useCartStore.getState;
+  const setCartState = useCartStore.setState;
   const router = useRouter();
 
   const fetchCotizaciones = useCallback(async () => {
@@ -89,6 +102,7 @@ export default function QuotesScreen() {
   }, [fetchCotizaciones]);
 
   const handleAddToCart = async (id: string) => {
+    const prevCart = getCartState().cart;
     try {
       setAddingId(id);
       const {
@@ -113,6 +127,7 @@ export default function QuotesScreen() {
         throw new Error("La cotización no tiene líneas para agregar");
       }
 
+      // Optimistic: agregamos al carrito local ya mismo
       detalles.forEach((d: any) => {
         addToCart({
           id_producto: d.id_producto,
@@ -129,6 +144,8 @@ export default function QuotesScreen() {
         { text: "Seguir viendo" },
       ]);
     } catch (err: any) {
+      // Rollback si algo falla
+      setCartState({ cart: prevCart });
       Alert.alert("Error", err?.message ?? "No se pudo agregar al carrito");
     } finally {
       setAddingId(null);
@@ -144,11 +161,21 @@ export default function QuotesScreen() {
         onPress: async () => {
           try {
             setDeletingId(id);
+            // Optimistic UI: remover de la lista inmediatamente
+            const prev = cotizaciones;
+            setCotizaciones((curr) => curr.filter((c) => c.id_cotizacion !== id));
+
             const { error } = await supabase
               .from("cotizacion")
               .delete()
               .eq("id_cotizacion", id);
-            if (error) throw error;
+
+            if (error) {
+              // rollback si falla
+              setCotizaciones(prev);
+              throw error;
+            }
+            // Opcional: refrescar silenciosamente para asegurar consistencia
             fetchCotizaciones();
           } catch (err: any) {
             Alert.alert("Error", err?.message ?? "No se pudo eliminar");
@@ -338,11 +365,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: "700",
-    color: "#F9FAFB",
+    color: PALETTE.text,
   },
   subtitle: {
     fontSize: 14,
-    color: "#9CA3AF",
+    color: PALETTE.textSoft,
     marginTop: 8,
   },
   loader: {
@@ -356,7 +383,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 16,
     marginTop: 10,
-    borderColor: "#111827",
+    borderColor: PALETTE.border,
     borderWidth: 1,
     gap: 10,
     // Sombra para separar visualmente
@@ -373,7 +400,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   cardTitle: {
-    color: "#F9FAFB",
+    color: PALETTE.text,
     fontSize: 16,
     fontWeight: "700",
   },
@@ -381,30 +408,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
-    backgroundColor: "#1f2937",
-    color: "#E5E7EB",
+    backgroundColor: PALETTE.accentLight,
+    color: PALETTE.text,
     fontSize: 12,
     textTransform: "capitalize",
   },
   badgeDanger: {
-    backgroundColor: "#7f1d1d",
-    color: "#FECACA",
+    backgroundColor: "#fce7e7",
+    color: "#7f1d1d",
   },
   miniBadge: {
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 8,
-    backgroundColor: "#0b1220",
-    color: "#9CA3AF",
+    backgroundColor: PALETTE.accentLight,
+    color: PALETTE.textSoft,
     fontSize: 11,
   },
   cardSubtitle: {
-    color: "#9CA3AF",
+    color: PALETTE.textSoft,
     fontSize: 13,
     marginBottom: 2,
   },
   total: {
-    color: "#F9FAFB",
+    color: PALETTE.text,
     fontSize: 15,
     fontWeight: "700",
     marginTop: 6,
@@ -422,14 +449,14 @@ const styles = StyleSheet.create({
   metricBox: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#1f2937",
+    borderColor: PALETTE.border,
     borderRadius: 12,
     padding: 12,
-    backgroundColor: "#0b1220",
+    backgroundColor: PALETTE.base,
     gap: 6,
   },
   metricLabel: {
-    color: "#9CA3AF",
+    color: PALETTE.textSoft,
     fontSize: 11,
     fontWeight: "600",
     textTransform: "uppercase",
@@ -437,12 +464,12 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   metricValue: {
-    color: "#F9FAFB",
+    color: PALETTE.text,
     fontSize: 17,
     fontWeight: "700",
   },
   metricHint: {
-    color: "#6b7280",
+    color: PALETTE.textSoft,
     fontSize: 11,
     marginTop: -2,
   },
@@ -450,13 +477,13 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#1f2937",
+    borderColor: PALETTE.border,
     paddingVertical: 12,
     alignItems: "center",
     justifyContent: "center",
   },
   actionGhostText: {
-    color: "#E5E7EB",
+    color: PALETTE.text,
     fontWeight: "600",
     fontSize: 14,
   },
@@ -464,7 +491,7 @@ const styles = StyleSheet.create({
     borderColor: "#7f1d1d",
   },
   dangerText: {
-    color: "#fca5a5",
+    color: "#7f1d1d",
   },
   actionPrimary: {
     flex: 1,
@@ -475,7 +502,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   actionPrimaryText: {
-    color: "#111827",
+    color: PALETTE.base,
     fontWeight: "700",
     fontSize: 14,
   },
@@ -485,38 +512,40 @@ const styles = StyleSheet.create({
     backgroundColor: CARD_BG,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#1f2937",
+    borderColor: PALETTE.border,
     gap: 8,
   },
   emptyTitle: {
-    color: "#F9FAFB",
+    color: PALETTE.text,
     fontSize: 16,
     fontWeight: "700",
   },
   emptyText: {
-    color: "#9CA3AF",
-    fontSize: 14,
+    color: PALETTE.textSoft,
+    fontSize: 13,
   },
   emptyTip: {
-    color: ORANGE,
-    fontSize: 13,
-    fontWeight: "600",
+    color: PALETTE.textSoft,
+    fontSize: 12,
+    fontWeight: "500",
   },
   cta: {
-    backgroundColor: ORANGE,
+    backgroundColor: CARD_BG,
     borderRadius: 12,
     padding: 12,
     marginTop: 6,
     gap: 4,
+    borderWidth: 1,
+    borderColor: PALETTE.border,
   },
   ctaText: {
-    color: DARK_BG,
+    color: PALETTE.text,
     fontSize: 16,
     fontWeight: "700",
   },
   ctaSub: {
-    color: "#1f2937",
-    fontSize: 13,
+    color: PALETTE.textSoft,
+    fontSize: 12,
     fontWeight: "500",
   },
   sortRow: {
@@ -528,22 +557,23 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#1f2937",
+    borderColor: PALETTE.border,
     paddingVertical: 10,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: PALETTE.accentLight,
   },
   sortButtonActive: {
     borderColor: ORANGE,
     backgroundColor: ORANGE,
   },
   sortButtonText: {
-    color: "#E5E7EB",
+    color: PALETTE.text,
     fontWeight: "600",
     fontSize: 14,
   },
   sortButtonTextActive: {
-    color: DARK_BG,
+    color: PALETTE.base,
   },
   savingsBadge: {
     paddingHorizontal: 8,

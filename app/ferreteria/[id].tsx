@@ -1,19 +1,30 @@
 // app/ferreteria/[id].tsx
-import { useLocalSearchParams, router, useNavigation } from 'expo-router';
-import { useEffect, useState, useLayoutEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  ActivityIndicator,
-  Image,
-  TouchableOpacity,
-  Linking,
-  Platform
-} from 'react-native';
 import { supabase } from '@/lib/supabaseClient';
+import { router, useLocalSearchParams, useNavigation } from 'expo-router';
+import { useEffect, useLayoutEffect, useState } from 'react';
+import {
+  Image,
+  Linking,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
 import MapView, { Marker } from "react-native-maps";
+
+const PALETTE = {
+  base: "#ffffff",
+  primary: "#986132",
+  secondary: "#9C6535",
+  soft: "#f7f1ea",
+  text: "#000000",
+  textSoft: "#4b3323",
+  border: "#edd8c4",
+  accentMedium: "rgba(152, 97, 50, 0.18)",
+  accentLight: "rgba(152, 97, 50, 0.10)",
+};
 
 export default function FerreteriaScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -32,9 +43,9 @@ export default function FerreteriaScreen() {
   useLayoutEffect(() => {
     navigation.setOptions({
       title: store?.name || "Cargando…",
-      headerStyle: { backgroundColor: "#0f172a" },
-      headerTintColor: "#fff",
-      headerTitleStyle: { fontWeight: "bold" },
+      headerStyle: { backgroundColor: PALETTE.soft },
+      headerTintColor: PALETTE.primary,
+      headerTitleStyle: { fontWeight: "bold", color: PALETTE.text },
     });
   }, [store]);
 
@@ -59,6 +70,17 @@ export default function FerreteriaScreen() {
       }
       
 
+      const horarioParsed =
+        typeof sData.horario === "string"
+          ? (() => {
+              try {
+                return JSON.parse(sData.horario);
+              } catch {
+                return null;
+              }
+            })()
+          : sData.horario;
+
       setStore({
         id: sData.id_ferreteria,
         name: sData.razon_social,
@@ -66,7 +88,7 @@ export default function FerreteriaScreen() {
         phone: sData.telefono,
         lat: sData.latitud,
         lng: sData.longitud,
-        horario: sData.horario,
+        horario: horarioParsed,
         descripcion: sData.descripcion,
         rating_avg: sData.rating_avg,
       });
@@ -160,12 +182,12 @@ export default function FerreteriaScreen() {
     const diaActual = dias[ahora.getDay()];
     const h = horario[diaActual];
 
-    if (!h || h.abre === null) {
+    if (!h || h.abre == null || h.cierra == null) {
       return { estado: "cerrado", mensaje: "Cerrado hoy" };
     }
 
-    const [abreH, abreM] = h.abre.split(":").map(Number);
-    const [cierraH, cierraM] = h.cierra.split(":").map(Number);
+    const [abreH, abreM] = String(h.abre).split(":").map(Number);
+    const [cierraH, cierraM] = String(h.cierra).split(":").map(Number);
 
     const ahoraMin = ahora.getHours() * 60 + ahora.getMinutes();
     const abreMin = abreH * 60 + abreM;
@@ -374,7 +396,7 @@ const styles = StyleSheet.create({
   container: {
   flex: 1,
   padding: 16,
-  backgroundColor: "#111827", // igual que index
+  backgroundColor: PALETTE.base,
   },
 
 
@@ -383,40 +405,40 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 160,
     borderRadius: 12,
-    backgroundColor: "#25314b",
+    backgroundColor: PALETTE.accentLight,
     marginBottom: 20
   },
   skeletonText: {
     width: "60%",
     height: 20,
-    backgroundColor: "#25314b",
+    backgroundColor: PALETTE.accentLight,
     borderRadius: 6,
     marginBottom: 10
   },
   skeletonTextSmall: {
     width: "40%",
     height: 16,
-    backgroundColor: "#25314b",
+    backgroundColor: PALETTE.accentLight,
     borderRadius: 6,
     marginBottom: 20
   },
   skeletonCard: {
     width: "100%",
     height: 140,
-    backgroundColor: "#25314b",
+    backgroundColor: PALETTE.accentLight,
     borderRadius: 12
   },
 
   // HEADER
-  title: { color: '#fff', fontSize: 28, fontWeight: '700', marginBottom: 6 },
-  subtitle: { color: '#9CA3AF', marginBottom: 12 },
+  title: { color: PALETTE.text, fontSize: 28, fontWeight: '700', marginBottom: 6 },
+  subtitle: { color: PALETTE.textSoft, marginBottom: 12 },
 
   // MAPA
   map: { width: "100%", height: 200, borderRadius: 12, marginBottom: 16 },
 
   // BOTONES
   btn: {
-    backgroundColor: "#ff8a29",
+    backgroundColor: PALETTE.primary,
     paddingVertical: 12,
     borderRadius: 999,
     marginBottom:6,
@@ -425,7 +447,7 @@ const styles = StyleSheet.create({
     
   },
     btnText: {
-    color: "#111827",
+    color: PALETTE.base,
     fontWeight: "700",
     textAlign: "center",
   },
@@ -433,21 +455,21 @@ const styles = StyleSheet.create({
   // TARJETAS
   card: {
     padding:10,
-    backgroundColor: "#020617", // igual que CARD_BG
+    backgroundColor: PALETTE.soft,
     borderRadius: 24,           // más redondeado como index
     marginBottom: 16,
   },
 
   cardHead: { flexDirection: 'row', justifyContent: 'space-between' },
-  cardTitle: { color: '#fff', fontSize: 18, fontWeight: '600' },
-  cardText: { color: '#D1D5DB' },
-  muted: { color: '#9CA3AF' },
+  cardTitle: { color: PALETTE.text, fontSize: 18, fontWeight: '600' },
+  cardText: { color: PALETTE.textSoft },
+  muted: { color: PALETTE.textSoft },
 
   // GRID DE PRODUCTOS
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   prod: {
     width: "47%",
-    backgroundColor: '#000',
+    backgroundColor: PALETTE.base,
     borderRadius: 12,
     overflow: 'hidden',
     shadowColor: "#000",
@@ -458,10 +480,10 @@ const styles = StyleSheet.create({
   },
   prodImg: { width: '100%', height: 130, resizeMode: "cover" },
   prodBody: { padding: 10 },
-  prodTitle: { color: '#fff', fontWeight: '600', marginBottom: 10 },
-  prodPrice: { color: '#fff', marginBottom: 2 },
+  prodTitle: { color: PALETTE.text, fontWeight: '600', marginBottom: 10 },
+  prodPrice: { color: PALETTE.text, marginBottom: 2 },
   horarioTexto: {
-    color: "#D1D5DB",
+    color: PALETTE.textSoft,
     marginBottom: 3,
     fontSize: 14
   },
@@ -476,11 +498,11 @@ const styles = StyleSheet.create({
   flex: 1,
   justifyContent: "center",
   alignItems: "center",
-  backgroundColor: "#0f172a",
+  backgroundColor: PALETTE.base,
   padding: 20,
 },
 verMas: {
-  color: "#ff8a29",
+  color: PALETTE.primary,
   fontWeight: "600",
   marginTop: 4,
 },
@@ -492,13 +514,13 @@ rating: {
   marginTop: 4,
   marginBottom: 4,
 },
-reviewItem: {
+  reviewItem: {
   marginTop: 10,
   padding: 10,
-  backgroundColor: "#111827",
+  backgroundColor: PALETTE.soft,
   borderRadius: 10,
   borderWidth: 1,
-  borderColor: "#2a3443",
+  borderColor: PALETTE.border,
 },
 
 reviewRating: {
@@ -509,17 +531,17 @@ reviewRating: {
 },
 
 reviewComment: {
-  color: "#D1D5DB",
+  color: PALETTE.textSoft,
   fontSize: 14,
   marginBottom: 6,
 },
 
 reviewDate: {
-  color: "#9CA3AF",
+  color: PALETTE.textSoft,
   fontSize: 12,
 },
 noRating: {
-  color: "#9CA3AF",        // gris suave
+  color: PALETTE.textSoft,        // gris suave
   fontSize: 14,
   fontStyle: "italic",     // estilo “sin reseñas”
   marginTop: 4,

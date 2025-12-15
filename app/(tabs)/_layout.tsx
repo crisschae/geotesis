@@ -5,9 +5,13 @@ import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 import { StripeProvider } from "@stripe/stripe-react-native";
 import { View } from "react-native";
 
-const ORANGE = '#ff8a29';
-const DARK_BG = '#111827';
-const CARD_BG = '#020617';
+const PALETTE = {
+  primary: '#986132',
+  secondary: '#9C6535',
+  base: '#ffffff',
+  border: '#edd8c4',
+  inactive: '#9C6535',
+};
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
@@ -24,11 +28,11 @@ export default function TabLayout() {
       <View style={{ flex: 1 }}>
         <Tabs
           screenOptions={{
-            tabBarActiveTintColor: ORANGE,
-            tabBarInactiveTintColor: '#9CA3AF',
+            tabBarActiveTintColor: PALETTE.primary,
+            tabBarInactiveTintColor: PALETTE.inactive,
             tabBarStyle: {
-              backgroundColor: CARD_BG,
-              borderTopColor: '#111827',
+              backgroundColor: PALETTE.base,
+              borderTopColor: PALETTE.border,
               height: 68,
               paddingBottom: 8,
               paddingTop: 6,

@@ -10,6 +10,16 @@ import {
 
 import { useRouter } from "expo-router";
 
+const PALETTE = {
+  primary: "#986132",
+  secondary: "#9C6535",
+  base: "#ffffff",
+  soft: "#f7f1ea",
+  text: "#000000",
+  textSoft: "#4b3323",
+  border: "#edd8c4",
+};
+
 import { useUserLocation } from '@/hooks/useUserLocation';
 import type { FerreteriaCercana } from '@/lib/ferreterias';
 import { getProductoMasBaratoPorFerreteria } from '@/lib/productos';
@@ -52,6 +62,7 @@ export function FerreteriaSheet({
   ferreteria,
   onClose,
   onVerRuta,
+  onVerCatalogo,
 }: Props) {
   const loc = useUserLocation();
   const [loading, setLoading] = useState(false);
@@ -141,7 +152,7 @@ const distanciaTexto =
 
           {loading && (
             <View style={styles.loadingRow}>
-              <ActivityIndicator color="#ff8a29" size="small" />
+              <ActivityIndicator color={PALETTE.primary} size="small" />
               <Text style={styles.loadingText}>Calculando datos...</Text>
             </View>
           )}
@@ -150,6 +161,12 @@ const distanciaTexto =
             <Pressable
               style={[styles.button, styles.secondaryButton]}
               onPress={() => {
+                // Cerrar el sheet antes de navegar
+                onClose();
+                if (onVerCatalogo) {
+                  onVerCatalogo();
+                  return;
+                }
                 if (ferreteria?.id_ferreteria) {
                   router.push(`/ferreteria/${ferreteria.id_ferreteria}`);
                 } else {
@@ -174,36 +191,38 @@ const distanciaTexto =
 }
 
 const styles = StyleSheet.create({
-    backdrop: {
-      flex: 1,
-      justifyContent: 'flex-end',
-      backgroundColor: 'transparent',  // ⬅️ Solución definitiva
-    },
+  backdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.25)',
+  },
 
   sheet: {
-    backgroundColor: '#020617',
+    backgroundColor: PALETTE.base,
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 24,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
+    borderWidth: 1,
+    borderColor: PALETTE.border,
   },
   handle: {
     alignSelf: 'center',
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#4b5563',
+    backgroundColor: PALETTE.border,
     marginBottom: 12,
   },
   title: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#F9FAFB',
+    color: PALETTE.text,
   },
   subtitle: {
     fontSize: 13,
-    color: '#9CA3AF',
+    color: PALETTE.textSoft,
     marginBottom: 16,
   },
   row: {
@@ -214,12 +233,12 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 13,
-    color: '#9CA3AF',
+    color: PALETTE.textSoft,
   },
   value: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#F9FAFB',
+    color: PALETTE.text,
   },
   loadingRow: {
     flexDirection: 'row',
@@ -229,7 +248,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginLeft: 8,
     fontSize: 12,
-    color: '#9CA3AF',
+    color: PALETTE.textSoft,
   },
   actionsRow: {
     flexDirection: 'row',
@@ -240,25 +259,25 @@ const styles = StyleSheet.create({
   button: {
     flex: 1,
     borderRadius: 999,
-    paddingVertical: 10,
+    paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   primaryButton: {
-    backgroundColor: '#ff8a29',
+    backgroundColor: PALETTE.primary,
   },
   primaryButtonText: {
-    color: '#111827',
+    color: PALETTE.base,
     fontSize: 14,
     fontWeight: '700',
   },
   secondaryButton: {
     borderWidth: 1,
-    borderColor: '#4b5563',
-    backgroundColor: 'transparent',
+    borderColor: PALETTE.secondary,
+    backgroundColor: PALETTE.base,
   },
   secondaryButtonText: {
-    color: '#E5E7EB',
+    color: PALETTE.secondary,
     fontSize: 14,
     fontWeight: '600',
   },

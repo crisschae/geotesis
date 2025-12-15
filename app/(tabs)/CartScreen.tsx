@@ -15,9 +15,21 @@ import { supabase } from "../../lib/supabaseClient";
 import { useCartStore } from "../../services/cartStore";
 import { createPaymentIntent } from "../../services/stripe";
 
-const ACCENT = "#ff8a29";
-const DARK_BG = "#111827";
-const CARD_BG = "#020617";
+const PALETTE = {
+  base: "#ffffff",
+  primary: "#986132",
+  secondary: "#9C6535",
+  soft: "#f7f1ea",
+  text: "#000000",
+  textSoft: "#4b3323",
+  border: "#edd8c4",
+  accentMedium: "rgba(152, 97, 50, 0.18)",
+  accentLight: "rgba(152, 97, 50, 0.10)",
+};
+
+const ACCENT = PALETTE.primary;
+const DARK_BG = PALETTE.base;
+const CARD_BG = PALETTE.soft;
 
 type RecommendedProduct = {
   id: string;
@@ -219,7 +231,7 @@ export default function CartScreen() {
                 style={{
                   fontSize: 18,
                   fontWeight: "700",
-                  color: "#111827",
+                  color: PALETTE.text,
                 }}
               >
                 Tu carrito está vacío
@@ -227,7 +239,7 @@ export default function CartScreen() {
               <Text
                 style={{
                   marginTop: 4,
-                  color: "#1f2937",
+                  color: PALETTE.textSoft,
                   fontSize: 13,
                 }}
               >
@@ -263,7 +275,7 @@ export default function CartScreen() {
               marginBottom: 12,
               fontSize: 18,
               fontWeight: "700",
-              color: "#F9FAFB",
+              color: PALETTE.text,
             }}
           >
             Recomendaciones para ti
@@ -284,30 +296,30 @@ export default function CartScreen() {
                   marginRight: 12,
                   overflow: "hidden",
                   borderWidth: 1,
-                  borderColor: "#1f2937",
+                  borderColor: PALETTE.border,
                 }}
               >
                 <Image
                   source={{ uri: r.image }}
-                  style={{ width: "100%", height: 120, backgroundColor: "#111827" }}
+                  style={{ width: "100%", height: 120, backgroundColor: CARD_BG }}
                 />
                 <View style={{ padding: 12 }}>
                   <Text
                     numberOfLines={2}
-                    style={{ color: "#F9FAFB", fontWeight: "600", fontSize: 14 }}
+                    style={{ color: PALETTE.text, fontWeight: "600", fontSize: 14 }}
                   >
                     {r.title}
                   </Text>
                   <Text
                     numberOfLines={2}
-                    style={{ color: "#9CA3AF", fontSize: 12, marginTop: 4 }}
+                    style={{ color: PALETTE.textSoft, fontSize: 12, marginTop: 4 }}
                   >
                     {r.subtitle}
                   </Text>
                   <Text
                     style={{
                       marginTop: 8,
-                      color: "#F9FAFB",
+                      color: PALETTE.text,
                       fontSize: 16,
                       fontWeight: "700",
                     }}
@@ -335,7 +347,7 @@ export default function CartScreen() {
 
   // Estado con productos en el carrito
   return (
-    <View style={{ flex: 1, backgroundColor: "#f3f4f6" }}>
+    <View style={{ flex: 1, backgroundColor: DARK_BG }}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ padding: 20, paddingBottom: 140 }}
@@ -345,7 +357,7 @@ export default function CartScreen() {
             fontSize: 22,
             fontWeight: "700",
             marginBottom: 12,
-            color: "#111827",
+            color: PALETTE.text,
           }}
         >
           Carrito ({cart.length})

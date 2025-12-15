@@ -16,6 +16,18 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+const PALETTE = {
+  base: "#ffffff",
+  primary: "#986132",
+  secondary: "#9C6535",
+  soft: "#f7f1ea",
+  text: "#000000",
+  textSoft: "#4b3323",
+  border: "#edd8c4",
+  accentLight: "rgba(152, 97, 50, 0.10)",
+  accentMedium: "rgba(152, 97, 50, 0.18)",
+};
+
 import { getDistanceUserToFerreteria } from "@/services/googleDistance";
 import { useUserLocation } from "@/hooks/useUserLocation";
 
@@ -74,8 +86,8 @@ export default function SearchScreen() {
   const [mostrandoSugerencias, setMostrandoSugerencias] = useState(false); // Controlar visibilidad
 
   const { location } = useUserLocation();
-  const ORANGE = "#ff8a29";
-  const DARK_BG = "#111827";
+  const ORANGE = PALETTE.primary;
+  const DARK_BG = PALETTE.base;
 
   // Debounce específico para el input de autocompletado de la cotización
   const debouncedSolicitudNombre = useDebounce(solicitudNombre, 300);
@@ -306,12 +318,12 @@ export default function SearchScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: DARK_BG }}>
-      <View style={{ flex: 1, padding: 15 }}>
+      <View style={{ flex: 1, padding: 15, backgroundColor: DARK_BG }}>
 
         {/* --- SECCIÓN DE CREAR COTIZACIÓN --- */}
-        <View style={{ backgroundColor: "#1f2937", borderRadius: 12, padding: 12, marginBottom: 14, gap: 10, zIndex: 10 }}>
-          <Text style={{ color: "#fff", fontSize: 16, fontWeight: "700" }}>Crear cotización</Text>
-          <Text style={{ color: "#9CA3AF", fontSize: 13 }}>
+        <View style={{ backgroundColor: PALETTE.soft, borderRadius: 16, padding: 14, marginBottom: 14, gap: 10, borderWidth: 1, borderColor: PALETTE.border, zIndex: 10 }}>
+          <Text style={{ color: PALETTE.text, fontSize: 16, fontWeight: "700" }}>Crear cotización</Text>
+          <Text style={{ color: PALETTE.textSoft, fontSize: 13 }}>
             Busca productos para cotizar en múltiples ferreterías.
           </Text>
           
@@ -326,14 +338,14 @@ export default function SearchScreen() {
                   if (text.length === 0) setMostrandoSugerencias(false);
                 }}
                 placeholder="Ej: Cemento, Clavos..."
-                placeholderTextColor="#aaa"
+                placeholderTextColor={PALETTE.textSoft}
                 style={{
-                  backgroundColor: "#111827",
-                  color: "#fff",
-                  padding: 10,
-                  borderRadius: 8,
+                  backgroundColor: PALETTE.base,
+                  color: PALETTE.text,
+                  padding: 12,
+                  borderRadius: 10,
                   borderWidth: 1,
-                  borderColor: "#374151",
+                  borderColor: PALETTE.secondary,
                 }}
               />
 
@@ -344,7 +356,7 @@ export default function SearchScreen() {
                   top: 45, // Justo debajo del input
                   left: 0,
                   right: 0,
-                  backgroundColor: "#1f2937",
+                  backgroundColor: PALETTE.base,
                   borderWidth: 1,
                   borderColor: ORANGE,
                   borderRadius: 8,
@@ -364,10 +376,10 @@ export default function SearchScreen() {
                         style={{
                           padding: 12,
                           borderBottomWidth: index === sugerencias.length - 1 ? 0 : 1,
-                          borderBottomColor: "#374151"
+                          borderBottomColor: PALETTE.border
                         }}
                       >
-                        <Text style={{ color: "#fff" }}>{item}</Text>
+                        <Text style={{ color: PALETTE.text }}>{item}</Text>
                       </TouchableOpacity>
                     ))}
                   </ScrollView>
@@ -379,16 +391,16 @@ export default function SearchScreen() {
               value={solicitudCantidad}
               onChangeText={setSolicitudCantidad}
               placeholder="Cant."
-              placeholderTextColor="#aaa"
+              placeholderTextColor={PALETTE.textSoft}
               keyboardType="numeric"
               style={{
                 width: 70,
-                backgroundColor: "#111827",
-                color: "#fff",
-                padding: 10,
-                borderRadius: 8,
+                backgroundColor: PALETTE.base,
+                color: PALETTE.text,
+                padding: 12,
+                borderRadius: 10,
                 borderWidth: 1,
-                borderColor: "#374151",
+                borderColor: PALETTE.secondary,
                 textAlign: "center",
               }}
             />
@@ -398,10 +410,10 @@ export default function SearchScreen() {
                 backgroundColor: ORANGE,
                 paddingHorizontal: 12,
                 justifyContent: "center",
-                borderRadius: 8,
+                borderRadius: 10,
               }}
             >
-              <Text style={{ color: DARK_BG, fontWeight: "700" }}>+</Text>
+              <Text style={{ color: PALETTE.base, fontWeight: "700" }}>+</Text>
             </TouchableOpacity>
           </View>
 
@@ -414,17 +426,19 @@ export default function SearchScreen() {
                     flexDirection: "row",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    backgroundColor: "#0f172a",
+                    backgroundColor: PALETTE.soft,
                     padding: 10,
-                    borderRadius: 8,
+                    borderRadius: 10,
+                    borderWidth: 1,
+                    borderColor: PALETTE.border,
                   }}
                 >
                   <View>
-                    <Text style={{ color: "#fff", fontWeight: "600" }}>{it.nombre_busqueda}</Text>
-                    <Text style={{ color: "#9CA3AF", fontSize: 12 }}>x {it.cantidad}</Text>
+                    <Text style={{ color: PALETTE.text, fontWeight: "600" }}>{it.nombre_busqueda}</Text>
+                    <Text style={{ color: PALETTE.textSoft, fontSize: 12 }}>x {it.cantidad}</Text>
                   </View>
                   <TouchableOpacity onPress={() => removeItemSolicitado(idx)}>
-                    <Text style={{ color: "#ef4444", fontWeight: "700", fontSize: 12 }}>Eliminar</Text>
+                    <Text style={{ color: "#b91c1c", fontWeight: "700", fontSize: 12 }}>Eliminar</Text>
                   </TouchableOpacity>
                 </View>
               ))}
@@ -435,7 +449,7 @@ export default function SearchScreen() {
             onPress={crearCotizacion}
             disabled={creando || itemsSolicitados.length === 0}
             style={{
-              backgroundColor: creando || itemsSolicitados.length === 0 ? "#4b5563" : ORANGE,
+              backgroundColor: creando || itemsSolicitados.length === 0 ? PALETTE.accentMedium : ORANGE,
               paddingVertical: 12,
               borderRadius: 10,
               alignItems: "center",
@@ -444,34 +458,34 @@ export default function SearchScreen() {
             }}
           >
             {creando ? (
-              <ActivityIndicator color={DARK_BG} />
+              <ActivityIndicator color={PALETTE.base} />
             ) : (
-              <Text style={{ color: DARK_BG, fontWeight: "700" }}>Generar Cotización Inteligente</Text>
+              <Text style={{ color: PALETTE.base, fontWeight: "700" }}>Generar Cotización Inteligente</Text>
             )}
           </TouchableOpacity>
         </View>
 
         {/* --- SECCIÓN INFERIOR: BÚSQUEDA TRADICIONAL --- */}
-        <View style={{ flexDirection: "row", backgroundColor: "#1f2937", padding: 10, borderRadius: 10, marginBottom: 15, zIndex: 1 }}>
+        <View style={{ flexDirection: "row", backgroundColor: PALETTE.soft, padding: 10, borderRadius: 12, marginBottom: 15, zIndex: 1, borderWidth: 1, borderColor: PALETTE.border }}>
           <TextInput
             value={busqueda}
             onChangeText={(text) => setBusqueda(text)}
             placeholder="Buscar productos sueltos..."
-            placeholderTextColor="#aaa"
-            style={{ flex: 1, color: "#fff" }}
+            placeholderTextColor={PALETTE.textSoft}
+            style={{ flex: 1, color: PALETTE.text }}
             onSubmitEditing={() => buscar(busqueda)}
           />
           <TouchableOpacity onPress={() => buscar(busqueda)}>
-            <Text style={{ color: ORANGE, fontSize: 16, marginLeft: 10 }}>Buscar</Text>
+            <Text style={{ color: ORANGE, fontSize: 16, marginLeft: 10, fontWeight: "700" }}>Buscar</Text>
           </TouchableOpacity>
         </View>
 
         {/* FILTROS Y RESULTADOS DE LISTA (Igual que antes) */}
         <TouchableOpacity
           onPress={() => setFiltrosAbiertos(!filtrosAbiertos)}
-          style={{ backgroundColor: "#1f2937", padding: 10, borderRadius: 10, marginBottom: 10 }}
+          style={{ backgroundColor: PALETTE.soft, padding: 10, borderRadius: 12, marginBottom: 10, borderWidth: 1, borderColor: PALETTE.border }}
         >
-          <Text style={{ color: "#fff", fontWeight: "600" }}>
+          <Text style={{ color: PALETTE.text, fontWeight: "700" }}>
             {filtrosAbiertos ? "Ocultar filtros ▲" : "Mostrar filtros ▼"}
           </Text>
         </TouchableOpacity>
@@ -485,17 +499,35 @@ export default function SearchScreen() {
           data={resultados}
           keyExtractor={(item) => item.id_producto}
           contentContainerStyle={{ paddingBottom: 40 }}
-          ListEmptyComponent={!loading ? <Text style={{ color: "#aaa", textAlign: "center", marginTop: 20 }}>Sin resultados</Text> : null}
+          ListEmptyComponent={
+            !loading ? (
+              <Text style={{ color: PALETTE.textSoft, textAlign: "center", marginTop: 20 }}>
+                Sin resultados
+              </Text>
+            ) : null
+          }
           renderItem={({ item }) => (
             <TouchableOpacity
               onPress={() => router.push(`/productos/${item.id_producto}`)}
-              style={{ backgroundColor: "#1f2937", marginBottom: 12, padding: 12, borderRadius: 10, flexDirection: "row", gap: 12 }}
+              style={{
+                backgroundColor: PALETTE.base,
+                marginBottom: 12,
+                padding: 12,
+                borderRadius: 12,
+                flexDirection: "row",
+                gap: 12,
+                borderWidth: 1,
+                borderColor: PALETTE.border,
+              }}
             >
-               <Image source={{ uri: item.imagenes?.[0] }} style={{ width: 60, height: 60, borderRadius: 8 }} />
+               <Image
+                 source={{ uri: item.imagenes?.[0] }}
+                 style={{ width: 60, height: 60, borderRadius: 8, backgroundColor: PALETTE.accentLight }}
+               />
                <View style={{flex: 1}}>
-                 <Text style={{ color: "#fff", fontWeight: "600" }}>{item.nombre}</Text>
+                 <Text style={{ color: PALETTE.text, fontWeight: "700" }}>{item.nombre}</Text>
                  <Text style={{ color: ORANGE, fontSize: 15 }}>${item.precio}</Text>
-                 <Text style={{ color: "#ccc", fontSize: 11 }}>{item.ferreteria?.razon_social}</Text>
+                 <Text style={{ color: PALETTE.textSoft, fontSize: 11 }}>{item.ferreteria?.razon_social}</Text>
                </View>
             </TouchableOpacity>
           )}

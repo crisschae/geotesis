@@ -1,8 +1,7 @@
-import { Link, router } from 'expo-router';
-import { useState } from 'react';
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { useLocalSearchParams } from "expo-router";
 import { supabase } from '@/lib/supabaseClient';
+import { Link, router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
+import { Alert, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -55,10 +54,11 @@ export default function LoginScreen() {
     <View style={styles.screen}>
       <View style={styles.card}>
         <View style={styles.header}>
-          <Text style={styles.logoText}>
-            <Text style={styles.logoAccent}>Geo</Text>
-            <Text style={styles.logoMain}>Ferre</Text>
-          </Text>
+          <Image
+            source={{ uri: "https://bhlsmetxwtqypdyxcmyk.supabase.co/storage/v1/object/sign/img/1faf1d92--4710-bec3-becdee77a301.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jOTYxYjljOS1mOWZmLTQzZDUtYWIzNS1iOWVmYTI4ODhlOWQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWcvMWZhZjFkOTItLTQ3MTAtYmVjMy1iZWNkZWU3N2EzMDEucG5nIiwiaWF0IjoxNzY1ODMzNTI5LCJleHAiOjE3OTczNjk1Mjl9.BNF1ReoPoo-4FAKQAUU8fArupxcR49UdgM-yrW51TKA" }}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
           <Text style={styles.subtitle}>Encuentra materiales en ferreterías cercanas</Text>
         </View>
 
@@ -114,14 +114,20 @@ export default function LoginScreen() {
   );
 }
 
-const ORANGE = '#ff8a29';
-const DARK_BG = '#111827';
-const CARD_BG = '#020617';
+const PALETTE = {
+  primary: '#986132',
+  secondary: '#9C6535',
+  base: '#ffffff',
+  soft: '#f7f1ea',
+  text: '#000000',
+  textSoft: '#4b3323',
+  border: '#edd8c4',
+};
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: DARK_BG,
+    backgroundColor: PALETTE.base,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 24,
@@ -129,7 +135,7 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     maxWidth: 420,
-    backgroundColor: CARD_BG,
+    backgroundColor: PALETTE.soft,
     borderRadius: 24,
     paddingHorizontal: 24,
     paddingVertical: 32,
@@ -141,22 +147,14 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 24,
+    alignItems: 'center',
   },
-  logoText: {
-    fontSize: 32,
-    fontWeight: '800',
-    marginBottom: 4,
+  logoImage: {
+    width: 180,
+    height: 100,
+    marginBottom: 8,
   },
-  logoAccent: {
-    color: ORANGE,
-  },
-  logoMain: {
-    color: '#F9FAFB',
-  },
-  subtitle: {
-    color: '#9CA3AF',
-    fontSize: 14,
-  },
+  subtitle: { color: PALETTE.textSoft, fontSize: 14 },
   form: {
     gap: 16,
   },
@@ -164,20 +162,17 @@ const styles = StyleSheet.create({
     width: '100%',
     gap: 6,
   },
-  inputLabel: {
-    color: '#E5E7EB',
-    fontSize: 13,
-  },
+  inputLabel: { color: PALETTE.textSoft, fontSize: 13 },
   input: {
     width: '100%',
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#374151',
+    borderColor: PALETTE.secondary,
     paddingHorizontal: 18,
     paddingVertical: 12,
     fontSize: 15,
-    color: '#F9FAFB',
-    backgroundColor: '#020617',
+    color: PALETTE.text,
+    backgroundColor: PALETTE.base,
   },
   primaryButton: {
     marginTop: 8,
@@ -186,17 +181,17 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: ORANGE,
+    backgroundColor: PALETTE.primary,
   },
   primaryButtonText: {
-    color: '#111827',
+    color: PALETTE.base,
     fontSize: 16,
     fontWeight: '700',
   },
   linkText: {
     marginTop: 12,
     fontSize: 13,
-    color: '#F97316',
+    color: PALETTE.primary,
     textAlign: 'center',
   },
   footer: {
@@ -206,12 +201,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
-  footerText: {
-    color: '#9CA3AF',
-    fontSize: 13,
-  },
+  footerText: { color: PALETTE.textSoft, fontSize: 13 },
   footerLinkText: {
-    color: ORANGE,
+    color: PALETTE.primary,
     fontSize: 13,
     fontWeight: '600',
   },

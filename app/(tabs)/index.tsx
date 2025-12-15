@@ -22,9 +22,21 @@ import {
 
 
 
-const ORANGE = "#ff8a29";
-const DARK_BG = "#111827";
-const CARD_BG = "#020617";
+const PALETTE = {
+  base: "#ffffff",
+  primary: "#986132",      // fuerte principal
+  secondary: "#9C6535",    // suave
+  soft: "#f7f1ea",         // fondos suaves
+  text: "#000000",
+  textSoft: "#4b3323",
+  border: "#edd8c4",
+  accentMedium: "rgba(152, 97, 50, 0.18)",
+  accentLight: "rgba(152, 97, 50, 0.10)",
+};
+
+const ORANGE = PALETTE.primary;
+const DARK_BG = PALETTE.base;
+const CARD_BG = PALETTE.soft;
 
 const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_API_KEY;
 
@@ -370,11 +382,13 @@ export default function HomeScreen() {
                       })
                     }
                     style={{
-                      backgroundColor: "#1f2937",
+                      backgroundColor: PALETTE.base,
                       borderRadius: 14,
                       marginRight: 14,
                       width: 160,
                       overflow: "hidden",
+                      borderWidth: 1,
+                      borderColor: PALETTE.border,
                     }}
                   >
                     <Image
@@ -383,11 +397,11 @@ export default function HomeScreen() {
                       resizeMode="cover"
                     />
                     <View style={{ padding: 10 }}>
-                      <Text numberOfLines={1} style={{ color: "#E5E7EB", fontWeight: "600" }}>
+                      <Text numberOfLines={1} style={{ color: PALETTE.text, fontWeight: "600" }}>
                         {item.nombre}
                       </Text>
                       <Text style={{ color: ORANGE, marginTop: 4 }}>${item.precio}</Text>
-                      <Text style={{ color: "#9CA3AF", fontSize: 12 }}>
+                      <Text style={{ color: PALETTE.textSoft, fontSize: 12 }}>
                         {item.ferreteria?.razon_social}
                       </Text>
                     </View>
@@ -395,7 +409,7 @@ export default function HomeScreen() {
                 )}
               />
             ) : (
-              <Text style={{ color: "#9CA3AF", marginLeft: 16 }}>
+              <Text style={{ color: PALETTE.textSoft, marginLeft: 16 }}>
                 No se encontraron productos cercanos.
               </Text>
             )}
@@ -544,14 +558,18 @@ export default function HomeScreen() {
         }}
 
         onVerCatalogo={() => {
-          router.push(`/ferreteria/${selectedFerreteria?.id_ferreteria}`);
+          const id = selectedFerreteria?.id_ferreteria;
+          setSelectedFerreteria(null);
+          if (id) {
+            router.push(`/ferreteria/${id}`);
+          }
         }}
       />
 
       {loadingRuta && (
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#ff8a29" />
-          <Text style={{ color: "#fff", marginTop: 10 }}>Calculando distancia...</Text>
+          <ActivityIndicator size="large" color={ORANGE} />
+          <Text style={{ color: PALETTE.text, marginTop: 10 }}>Calculando distancia...</Text>
         </View>
       )}
     </View>
@@ -561,23 +579,23 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: DARK_BG },
   header: {
-    backgroundColor: "#111827",
+    backgroundColor: PALETTE.base,
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderColor: "#222",
+    borderColor: PALETTE.border,
     alignItems: "center",
   },
   locationButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1f2937",
+    backgroundColor: PALETTE.accentLight,
     paddingVertical: 6,
     paddingHorizontal: 14,
     borderRadius: 999,
   },
-  locationIcon: { fontSize: 14, marginRight: 6, color: "#ff8a29" },
-  locationText: { color: "#fff", fontWeight: "600" },
+  locationIcon: { fontSize: 14, marginRight: 6, color: ORANGE },
+  locationText: { color: PALETTE.text, fontWeight: "600" },
 
   mapContainer: { flex: 1.1, overflow: "hidden" },
 
@@ -602,7 +620,7 @@ const styles = StyleSheet.create({
     borderColor: ORANGE,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: "#111827",
+    backgroundColor: PALETTE.base,
   },
   searchIconCircle: {
     width: 32,
@@ -622,15 +640,15 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#111827",
+    backgroundColor: PALETTE.accentLight,
   },
   filterPillActive: { backgroundColor: ORANGE },
-  filterText: { color: "#E5E7EB", fontSize: 14, fontWeight: "500" },
-  filterTextActive: { color: "#111827", fontWeight: "700" },
+  filterText: { color: PALETTE.text, fontSize: 14, fontWeight: "500" },
+  filterTextActive: { color: PALETTE.base, fontWeight: "700" },
   helperTextRow: { marginTop: 4 },
-  helperText: { color: "#9CA3AF", fontSize: 12 },
+  helperText: { color: PALETTE.textSoft, fontSize: 12 },
   sheetHandleWrapper: { alignItems: "center", marginBottom: 12 },
-  sheetHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: "#4b5563" },
+  sheetHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: PALETTE.border },
 
   ferreteriaItem: {
     flexDirection: "row",
@@ -638,11 +656,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#374151",
+    borderBottomColor: PALETTE.border,
   },
-  ferreteriaName: { color: "#F9FAFB", fontSize: 14, fontWeight: "600" },
-  ferreteriaAddress: { color: "#9CA3AF", fontSize: 12 },
-  ferreteriaDistance: { color: "#E5E7EB", fontSize: 13, fontWeight: "500" },
+  ferreteriaName: { color: PALETTE.text, fontSize: 14, fontWeight: "600" },
+  ferreteriaAddress: { color: PALETTE.textSoft, fontSize: 12 },
+  ferreteriaDistance: { color: PALETTE.text, fontSize: 13, fontWeight: "500" },
 
   loadingOverlay: {
     position: "absolute",

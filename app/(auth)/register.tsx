@@ -282,9 +282,18 @@ export default function RegisterScreen() {
   );
 }
 
-const ORANGE = '#ff8a29';
-const DARK_BG = '#111827';
-const CARD_BG = '#020617';
+const PALETTE = {
+  primary: '#986132',
+  secondary: '#9C6535',
+  base: '#ffffff',
+  soft: '#f7f1ea',
+  text: '#000000',
+  textSoft: '#4b3323',
+  border: '#edd8c4',
+};
+const ORANGE = PALETTE.primary;
+const DARK_BG = PALETTE.base;
+const CARD_BG = PALETTE.soft;
 
 const styles = StyleSheet.create({
   screen: {
@@ -314,10 +323,10 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '800',
     marginBottom: 4,
-    color: '#F9FAFB',
+    color: PALETTE.text,
   },
   subtitle: {
-    color: '#9CA3AF',
+    color: PALETTE.textSoft,
     fontSize: 14,
   },
   form: {
@@ -328,19 +337,19 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   inputLabel: {
-    color: '#E5E7EB',
+    color: PALETTE.textSoft,
     fontSize: 13,
   },
   input: {
     width: '100%',
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#374151',
+    borderColor: PALETTE.secondary,
     paddingHorizontal: 18,
     paddingVertical: 12,
     fontSize: 15,
-    color: '#F9FAFB',
-    backgroundColor: '#020617',
+    color: PALETTE.text,
+    backgroundColor: PALETTE.base,
   },
   fuelRow: {
     flexDirection: 'row',
@@ -352,19 +361,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: '#4b5563',
-    backgroundColor: '#020617',
+    borderColor: PALETTE.secondary,
+    backgroundColor: PALETTE.base,
   },
   fuelChipActive: {
     borderColor: ORANGE,
     backgroundColor: ORANGE,
   },
   fuelChipText: {
-    color: '#E5E7EB',
+    color: PALETTE.text,
     fontSize: 13,
   },
   fuelChipTextActive: {
-    color: '#111827',
+    color: PALETTE.base,
     fontWeight: '600',
   },
   primaryButton: {
@@ -377,7 +386,7 @@ const styles = StyleSheet.create({
     backgroundColor: ORANGE,
   },
   primaryButtonText: {
-    color: '#111827',
+    color: PALETTE.base,
     fontSize: 16,
     fontWeight: '700',
   },
@@ -389,7 +398,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   footerText: {
-    color: '#9CA3AF',
+    color: PALETTE.textSoft,
     fontSize: 13,
   },
   footerLinkText: {

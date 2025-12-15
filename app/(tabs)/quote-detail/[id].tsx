@@ -1,7 +1,7 @@
 import { supabase } from "@/lib/supabaseClient";
+import { useCartStore } from "@/services/cartStore"; // Asegúrate de tener este import
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { useCartStore } from "@/services/cartStore"; // Asegúrate de tener este import
 import {
   ActivityIndicator,
   Alert,
@@ -13,10 +13,21 @@ import {
   View,
 } from "react-native";
 
-const DARK_BG = "#0b1220";
-const CARD_BG = "#0f172a";
-const ORANGE = "#ff8a29";
-const GREEN = "#10b981";
+const PALETTE = {
+  base: "#ffffff",
+  primary: "#986132",
+  secondary: "#9C6535",
+  soft: "#f7f1ea",
+  text: "#000000",
+  textSoft: "#4b3323",
+  border: "#edd8c4",
+  accentLight: "rgba(152, 97, 50, 0.10)",
+  accentMedium: "rgba(152, 97, 50, 0.18)",
+};
+const DARK_BG = PALETTE.base;
+const CARD_BG = PALETTE.soft;
+const ORANGE = PALETTE.primary;
+const GREEN = "#0f9f6e";
 
 type CotizacionDetalle = {
   id_producto: string | null;
@@ -467,7 +478,9 @@ export default function QuoteDetailScreen() {
                 <TouchableOpacity
                   style={[
                     styles.selectButton,
-                    isSelected ? { backgroundColor: "#1f2937", borderWidth: 1, borderColor: GREEN } : { backgroundColor: ORANGE }
+                    isSelected
+                      ? { backgroundColor: PALETTE.soft, borderWidth: 1, borderColor: GREEN }
+                      : { backgroundColor: ORANGE }
                   ]}
                   onPress={() => isSelected ? executeAddToCart(option) : handleSelectOption(option)}
                   disabled={processing}
@@ -550,16 +563,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#111827",
+    backgroundColor: PALETTE.soft,
     borderWidth: 1,
-    borderColor: "#1f2937",
+    borderColor: PALETTE.border,
   },
   backText: {
-    color: "#E5E7EB",
+    color: PALETTE.text,
     fontSize: 16,
   },
   topTitle: {
-    color: "#F9FAFB",
+    color: PALETTE.text,
     fontSize: 16,
     fontWeight: "700",
   },
@@ -567,30 +580,30 @@ const styles = StyleSheet.create({
     backgroundColor: CARD_BG,
     borderRadius: 14,
     padding: 14,
-    borderColor: "#111827",
+    borderColor: PALETTE.border,
     borderWidth: 1,
     marginBottom: 14,
   },
   metricsCard: {
     backgroundColor: CARD_BG,
     borderRadius: 14,
-    borderColor: "#1f2937",
+    borderColor: PALETTE.border,
     borderWidth: 1,
     padding: 12,
     marginBottom: 14,
   },
   title: {
-    color: "#F9FAFB",
+    color: PALETTE.text,
     fontSize: 18,
     fontWeight: "700",
   },
   subtitle: {
-    color: "#9CA3AF",
+    color: PALETTE.textSoft,
     fontSize: 13,
     marginTop: 4,
   },
   sectionTitle: {
-    color: "#F9FAFB",
+    color: PALETTE.text,
     fontSize: 15,
     fontWeight: "700",
     marginBottom: 10,
@@ -606,8 +619,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
-    backgroundColor: "#1f2937",
-    color: "#E5E7EB",
+    backgroundColor: PALETTE.accentLight,
+    color: PALETTE.text,
     fontSize: 12,
     textTransform: "capitalize",
     overflow: "hidden",
@@ -615,44 +628,44 @@ const styles = StyleSheet.create({
   metricBox: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#1f2937",
+    borderColor: PALETTE.border,
     borderRadius: 12,
     padding: 8,
-    backgroundColor: "#0b1220",
+    backgroundColor: PALETTE.base,
     gap: 4,
   },
   metricLabel: {
-    color: "#9CA3AF",
+    color: PALETTE.textSoft,
     fontSize: 10,
     fontWeight: "600",
     textTransform: "uppercase",
   },
   metricValue: {
-    color: "#F9FAFB",
+    color: PALETTE.text,
     fontSize: 15,
     fontWeight: "700",
   },
   metricHint: {
-    color: "#6b7280",
+    color: PALETTE.textSoft,
     fontSize: 10,
   },
   lineItem: {
-    backgroundColor: "#0b1220",
+    backgroundColor: PALETTE.base,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#1f2937",
+    borderColor: PALETTE.border,
     padding: 10,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
   },
   lineTitle: {
-    color: "#F9FAFB",
+    color: PALETTE.text,
     fontSize: 14,
     fontWeight: "700",
   },
   lineSubtitle: {
-    color: "#9CA3AF",
+    color: PALETTE.textSoft,
     fontSize: 12,
   },
   lineTotal: {
@@ -668,7 +681,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   loaderText: {
-    color: "#9CA3AF",
+    color: PALETTE.textSoft,
     fontSize: 14,
   },
   sortRow: {
@@ -680,7 +693,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#1f2937",
+    borderColor: PALETTE.border,
     paddingVertical: 8,
     alignItems: "center",
     justifyContent: "center",

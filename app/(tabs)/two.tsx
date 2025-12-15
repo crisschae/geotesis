@@ -4,9 +4,18 @@ import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'rea
 
 import { supabase } from '@/lib/supabaseClient';
 
-const ORANGE = '#ff8a29';
-const DARK_BG = '#111827';
-const CARD_BG = '#020617';
+const PALETTE = {
+  primary: '#986132',
+  secondary: '#9C6535',
+  base: '#ffffff',
+  soft: '#f7f1ea',
+  text: '#000000',
+  textSoft: '#4b3323',
+  border: '#edd8c4',
+};
+const ORANGE = PALETTE.primary;
+const DARK_BG = PALETTE.base;
+const CARD_BG = PALETTE.soft;
 
 type ClientePerfil = {
   nombre: string | null;
@@ -178,7 +187,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 26,
     fontWeight: '800',
-    color: '#F9FAFB',
+    color: PALETTE.text,
     marginBottom: 20,
   },
   avatarRow: {
@@ -190,12 +199,12 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#374151',
+    backgroundColor: PALETTE.secondary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarInitials: {
-    color: '#F9FAFB',
+    color: PALETTE.base,
     fontSize: 24,
     fontWeight: '700',
   },
@@ -203,12 +212,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   avatarName: {
-    color: '#F9FAFB',
+    color: PALETTE.text,
     fontSize: 18,
     fontWeight: '700',
   },
   avatarEmail: {
-    color: '#9CA3AF',
+    color: PALETTE.textSoft,
     fontSize: 13,
   },
   content: {
@@ -216,7 +225,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   sectionGroupLabel: {
-    color: '#D1D5DB',
+    color: PALETTE.textSoft,
     fontSize: 13,
     fontWeight: '700',
     marginBottom: 8,
@@ -234,29 +243,29 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#111827',
+    backgroundColor: PALETTE.secondary,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
   sectionIcon: {
     fontSize: 18,
-    color: '#F9FAFB',
+    color: PALETTE.base,
   },
   sectionTextWrapper: {
     flex: 1,
   },
   sectionTitle: {
-    color: '#F9FAFB',
+    color: PALETTE.text,
     fontSize: 15,
     fontWeight: '600',
   },
   sectionSubtitle: {
-    color: '#9CA3AF',
+    color: PALETTE.textSoft,
     fontSize: 12,
   },
   sectionChevron: {
-    color: '#6B7280',
+    color: PALETTE.textSoft,
     fontSize: 18,
     fontWeight: '600',
   },
@@ -269,7 +278,7 @@ const styles = StyleSheet.create({
     backgroundColor: ORANGE,
   },
   logoutText: {
-    color: '#111827',
+    color: PALETTE.base,
     fontSize: 16,
     fontWeight: '700',
   },
