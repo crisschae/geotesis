@@ -1,90 +1,132 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const Stripe = require('stripe');
+import express from "express";
+import cors from "cors";
+import Stripe from "stripe";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const app = express();
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// ==========================
-// 🔐 STRIPE WEBHOOK (PRIMERO)
-// ==========================
-app.post(
-  '/stripe/webhook',
-  express.raw({ type: 'application/json' }),
-  (req, res) => {
-    const sig = req.headers['stripe-signature'];
-    let event;
-
-    try {
-      event = stripe.webhooks.constructEvent(
-        req.body,
-        sig,
-        process.env.STRIPE_WEBHOOK_SECRET
-      );
-    } catch (err) {
-      console.error('❌ Webhook signature error:', err.message);
-      return res.status(400).send(`Webhook Error: ${err.message}`);
-    }
-
-    const data = event.data.object;
-
-    switch (event.type) {
-      case 'payment_intent.succeeded':
-        console.log('✅ Pago confirmado:', data.id);
-        // 👉 aquí luego conectas Supabase:
-        // - pedido → pagado
-        // - insertar en pagos
-        break;
-
-      case 'payment_intent.payment_failed':
-        console.log('❌ Pago fallido:', data.id);
-        break;
-
-      default:
-        console.log(`ℹ Evento no manejado: ${event.type}`);
-    }
-
-    res.json({ received: true });
-  }
-);
-
-// ==========================
-// Middleware normal
-// ==========================
+/**
+ * ==========================
+ * CONFIG BÁSICA
+ * ==========================
+ */
 app.use(cors());
 app.use(express.json());
 
-// Health check
-app.get('/', (req, res) => res.send('Stripe backend OK'));
+/**
+ * ==========================
+ * STRIPE INIT
+ * ==========================
+ */
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error("❌ STRIPE_SECRET_KEY no está definida en el entorno");
+}
 
-// Crear PaymentIntent
-app.post('/stripe/create-payment-intent', async (req, res) => {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: "2023-10-16",
+});
+
+/**
+ * ==========================
+ * HEALTH CHECK
+ * ==========================
+ */
+app.get("/", (req, res) => {
+  res.json({ status: "GeoFerre Stripe Backend OK" });
+});
+
+/**
+ * =====================================================
+ * 🔵 PAYMENT INTENT (STRIPE NATIVO / FUTURO BUILD)
+ * =====================================================
+ * (Se mantiene para cuando uses Dev Build o producción nativa)
+ */
+app.post("/stripe/create-payment-intent", async (req, res) => {
   try {
     const { amount } = req.body;
 
-    if (!amount || typeof amount !== 'number') {
-      return res.status(400).json({ error: 'amount inválido' });
+    if (!amount || typeof amount !== "number") {
+      return res.status(400).json({ error: "amount inválido" });
     }
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
-      currency: 'clp',
+      currency: "clp",
       automatic_payment_methods: { enabled: true },
     });
 
     return res.json({
-      clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
+      clientSecret: paymentIntent.client_secret,
     });
-  } catch (err) {
-    console.error('Stripe error:', err);
-    return res.status(400).json({ error: err.message });
+  } catch (error) {
+    console.error("❌ PaymentIntent error:", error);
+    return res.status(500).json({ error: error.message });
   }
 });
 
-// Puerto dinámico (Render OK)
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`🚀 Stripe backend corriendo en puerto ${port}`);
+/**
+ * =====================================================
+ * 🟢 STRIPE CHECKOUT (WEB – EXPO GO / MODAL)
+ * =====================================================
+ */
+app.post("/pago/checkout", async (req, res) => {
+  try {
+    const { amount } = req.body;
+
+    if (!amount || typeof amount !== "number") {
+      return res.status(400).json({ error: "amount inválido" });
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "clp",
+            product_data: {
+              name: "Compra GeoFerre",
+            },
+            unit_amount: amount,
+          },
+          quantity: 1,
+        },
+      ],
+      success_url: "geoferre://payment-return?status=success",
+      cancel_url: "geoferre://payment-return?status=cancel",
+    });
+
+    return res.json({ url: session.url });
+  } catch (error) {
+    console.error("❌ Checkout error:", error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * ==========================
+ * STRIPE WEBHOOK (OPCIONAL)
+ * ==========================
+ * (Se deja activo para futuro)
+ */
+app.post(
+  "/stripe/webhook",
+  express.raw({ type: "application/json" }),
+  (req, res) => {
+    res.json({ received: true });
+  }
+);
+
+/**
+ * ==========================
+ * SERVER
+ * ==========================
+ */
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`✅ Stripe backend corriendo en puerto ${PORT}`);
 });
