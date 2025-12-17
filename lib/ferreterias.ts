@@ -6,6 +6,9 @@ export interface FerreteriaCercana {
   latitud: number;
   longitud: number;
   distancia_km: number;
+  distancia_google: string;
+  duracion_google: string;
+  direccion: string;
   // ... otros campos
 }
 
