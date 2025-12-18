@@ -3,6 +3,7 @@ import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { Tabs } from "expo-router";
 import React from "react";
 import { View } from "react-native";
+import GeoFerreHeader from "@/components/GeoFerreHeader";
 
 const PALETTE = {
   primary: "#986132",
@@ -24,6 +25,7 @@ export default function TabLayout() {
     <View style={{ flex: 1 }}>
       <Tabs
         screenOptions={{
+          /* ---------- TAB BAR ---------- */
           tabBarActiveTintColor: PALETTE.primary,
           tabBarInactiveTintColor: PALETTE.inactive,
           tabBarStyle: {
@@ -36,7 +38,14 @@ export default function TabLayout() {
           tabBarLabelStyle: {
             fontSize: 11,
           },
+
+          /* ---------- HEADER GEOFERRE ---------- */
           headerShown: useClientOnlyValue(false, true),
+          headerTitle: () => <GeoFerreHeader />,
+          headerStyle: {
+            backgroundColor: PALETTE.base,
+          },
+          headerShadowVisible: false,
         }}
       >
         <Tabs.Screen
@@ -53,7 +62,6 @@ export default function TabLayout() {
           name="search"
           options={{
             title: "Buscar",
-            headerShown: false,
             tabBarIcon: ({ color }) => (
               <TabBarIcon name="search" color={color} />
             ),
