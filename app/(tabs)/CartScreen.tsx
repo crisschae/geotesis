@@ -34,7 +34,9 @@ export default function CartScreen() {
 
   const [loading, setLoading] = useState(false);
   const [showPagoModal, setShowPagoModal] = useState(false);
+
   const [usuario, setUsuario] = useState<any>(null);
+  const [clienteId, setClienteId] = useState<string | null>(null);
 
   // Inputs tarjeta
   const [cardNumber, setCardNumber] = useState("");
@@ -48,16 +50,31 @@ export default function CartScreen() {
   );
 
   /* =======================
-     Usuario
+     OBTENER USUARIO + CLIENTE
   ======================= */
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user) return;
+
       setUsuario(data.user);
+
+      const { data: cliente, error } = await supabase
+        .from("cliente_app")
+        .select("id_cliente")
+        .eq("auth_user_id", data.user.id)
+        .single();
+
+      if (error) {
+        console.log("❌ Error cliente_app:", error);
+        return;
+      }
+
+      setClienteId(cliente.id_cliente);
     });
   }, []);
 
   /* =======================
-     FORMATTERS (CLAVE)
+     FORMATTERS TARJETA
   ======================= */
   const formatCardNumber = (text: string) => {
     const cleaned = text.replace(/\D/g, "").slice(0, 16);
@@ -74,26 +91,36 @@ export default function CartScreen() {
     text.replace(/\D/g, "").slice(0, 4);
 
   /* =======================
-     LÓGICA BACKEND (DEMO)
+     PAGO AUTOMÁTICO (DEMO)
   ======================= */
   async function ejecutarPago() {
+    if (!clienteId) {
+      Alert.alert(
+        "Error",
+        "No se pudo identificar al cliente. Intenta nuevamente."
+      );
+      return;
+    }
+
     try {
       setLoading(true);
 
-      // Simulación backend real
+      // Simulación procesamiento
       await new Promise((r) => setTimeout(r, 1200));
 
       await supabase.from("pedido").insert({
+        id_cliente: clienteId,
         id_ferreteria: cart[0].id_ferreteria,
         monto_total: total,
         estado: "pagado",
         gateway: "stripe",
-        gateway_ref: `geoferre_demo_${Date.now()}`,
+        gateway_ref: `geoferre_${Date.now()}`,
         paid_at: new Date().toISOString(),
       });
 
       setShowPagoModal(false);
       clearCart();
+
       Alert.alert("Pago exitoso", "Compra realizada con éxito");
       router.replace("/");
     } catch (e: any) {
