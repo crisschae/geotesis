@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/images/ferre.png",
     "scheme": "geoferre",
-    "deepLinks": ["geoferre://"],
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
