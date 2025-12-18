@@ -7,7 +7,8 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import { useColorScheme } from '../hooks/useColorScheme';
-import { View } from "react-native";
+import GeoFerreHeader from "@/components/GeoFerreHeader";
+
 
 export {
   ErrorBoundary,
@@ -46,17 +47,24 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
 
   return (
-    <View style={{ flex: 1 }}> 
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <ActionSheetProvider>
-          <Stack initialRouteName="index">
-            <Stack.Screen name="index" options={{ headerShown: false }} />
-            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-          </Stack>
-        </ActionSheetProvider>
-      </ThemeProvider>
-    </View>
+    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <ActionSheetProvider>
+        <Stack
+          screenOptions={{
+            header: () => <GeoFerreHeader />,
+            headerShadowVisible: false,
+          }}
+        >
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+
+          {/* Tabs NO renderizan header propio */}
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+
+          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+        </Stack>
+      </ActionSheetProvider>
+    </ThemeProvider>
   );
 }
+

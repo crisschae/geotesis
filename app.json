@@ -49,7 +49,8 @@
       "router": {},
       "eas": {
         "projectId": "97bf6ea1-e1c1-40d9-beaa-b2d6462c70c8"
-      }
+      },
+      "EXPO_PUBLIC_API_URL": "https://geoferre-stripe-backend.onrender.com"
     }
   }
 }
