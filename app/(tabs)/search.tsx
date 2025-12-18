@@ -17,16 +17,49 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const PALETTE = {
-  base: "#ffffff",
-  primary: "#986132",
-  secondary: "#9C6535",
-  soft: "#f7f1ea",
-  text: "#000000",
-  textSoft: "#4b3323",
-  border: "#edd8c4",
-  accentLight: "rgba(152, 97, 50, 0.10)",
-  accentMedium: "rgba(152, 97, 50, 0.18)",
+  // === FONDOS ===
+  base: "#ffffff",              // Blanco puro para cards y elementos principales
+  soft: "#F9FAFB",             // 🔥 Gris muy claro para fondos secundarios
+  background: "#F3F4F6",       // 🔥 Gris claro para fondo de pantalla
+  
+  // === COLORES PRINCIPALES ===
+  primary: "#374151",           // 🔥 Gris carbón para botones principales
+  primaryHover: "#37291fff",      // 🔥 Gris más oscuro para hover/pressed
+  secondary: "#6B7280",         // 🔥 Gris medio para elementos secundarios
+  
+  // === TEXTOS ===
+  text: "#111827",              // Negro suave para texto principal
+  textSoft: "#6B7280",          // 🔥 Gris para texto secundario
+  textMuted: "#9CA3AF",         // Gris claro para texto deshabilitado
+  textLight: "#D1D5DB",         // Gris muy claro para placeholders
+  
+  // === BORDES Y DIVISORES ===
+  border: "#E5E7EB",            // 🔥 Gris claro para bordes
+  borderDark: "#D1D5DB",        // Gris medio para bordes enfatizados
+  divider: "#F3F4F6",           // Gris muy claro para líneas divisorias
+  
+  // === ACENTOS Y OVERLAYS ===
+  accentLight: "rgba(55, 65, 81, 0.05)",   // 🔥 Overlay gris muy sutil
+  accentMedium: "rgba(55, 65, 81, 0.10)",  // 🔥 Overlay gris sutil
+  accentStrong: "rgba(55, 65, 81, 0.15)",  // 🔥 Overlay gris visible
+  
+  // === ESTADOS ===
+  success: "#10B981",           // Verde para éxito
+  successLight: "#D1FAE5",      // Verde claro para fondos
+  error: "#EF4444",             // Rojo para errores
+  errorLight: "#FEE2E2",        // Rojo claro para fondos
+  warning: "#F59E0B",           // Amarillo para advertencias
+  warningLight: "#FEF3C7",      // Amarillo claro para fondos
+  info: "#3B82F6",              // Azul para información
+  infoLight: "#DBEAFE",         // Azul claro para fondos
+  
+  // === SOMBRAS ===
+  shadow: "rgba(0, 0, 0, 0.05)",     // Sombra muy sutil
+  shadowMedium: "rgba(0, 0, 0, 0.1)", // Sombra media
+  shadowStrong: "rgba(0, 0, 0, 0.15)", // Sombra pronunciada
 };
+
+// Constante para compatibilidad con código existente
 
 import { getDistanceUserToFerreteria } from "@/services/googleDistance";
 import { useUserLocation } from "@/hooks/useUserLocation";
