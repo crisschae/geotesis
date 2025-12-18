@@ -509,7 +509,6 @@ export default function HomeScreen() {
                         newFerreteria.duracion_google = result.duracion;
                       }
 
-                      // 🔥 ACTUALIZAR ARRAY COMPLETO
                       setNearFerreterias((prev) =>
                         prev.map((item) =>
                           item.id_ferreteria === newFerreteria.id_ferreteria
@@ -518,25 +517,24 @@ export default function HomeScreen() {
                         )
                       );
 
-                      // 🔥 ACTUALIZAR selectedFerreteria DESPUÉS que nearFerreterias se actualice
                       setTimeout(() => {
                         setSelectedFerreteria(newFerreteria);
                         collapseSheet();
                       }, 0);
                     }}
-
                   >
-                    <View style={styles.ferreteriaInfo}>
-                      <Text style={styles.ferreteriaName}>{f.razon_social}</Text>
-
-                      {/* Distancia real con fallback */}
-                      <Text style={styles.ferreteriaDistance}>
-                        {f.distancia_google ?? `${f.distancia_km.toFixed(1)} km`}
+                    {/* 🔥 Estructura corregida con flex */}
+                    <View style={{ flex: 1, paddingRight: 12 }}>
+                      <Text style={styles.ferreteriaName} numberOfLines={1}>
+                        {f.razon_social}
                       </Text>
                     </View>
+                    
+                    <Text style={styles.ferreteriaDistance}>
+                      {f.distancia_google ?? `${f.distancia_km.toFixed(1)} km`}
+                    </Text>
                   </TouchableOpacity>
-                  ))
-                }
+                ))}
               </Animated.ScrollView>
             </View>
           </View>
@@ -717,13 +715,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 4,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: PALETTE.border,
   },
-  ferreteriaName: { color: PALETTE.text, fontSize: 14, fontWeight: "600" },
+ ferreteriaName: { 
+    color: PALETTE.text, 
+    fontSize: 14, 
+    fontWeight: "600" 
+  },
   ferreteriaAddress: { color: PALETTE.textSoft, fontSize: 12 },
-  ferreteriaDistance: { color: PALETTE.text, fontSize: 13, fontWeight: "500" },
+    ferreteriaDistance: { 
+    color: PALETTE.text, 
+    fontSize: 13, 
+    fontWeight: "500",
+    marginLeft: 8, // 🔥 Espacio extra
+  },
 
   loadingOverlay: {
     position: "absolute",
@@ -733,12 +741,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  ferreteriaInfo: {
-  flexDirection: "row",
-  justifyContent: "space-between",
-  alignItems: "center",
-  paddingVertical: 8,
-  paddingHorizontal: 4,
-},
+
 
 });

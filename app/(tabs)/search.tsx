@@ -17,16 +17,49 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const PALETTE = {
-  base: "#ffffff",
-  primary: "#986132",
-  secondary: "#9C6535",
-  soft: "#f7f1ea",
-  text: "#000000",
-  textSoft: "#4b3323",
-  border: "#edd8c4",
-  accentLight: "rgba(152, 97, 50, 0.10)",
-  accentMedium: "rgba(152, 97, 50, 0.18)",
+  // === FONDOS ===
+  base: "#ffffff",              // Blanco puro para cards y elementos principales
+  soft: "#F9FAFB",             // 🔥 Gris muy claro para fondos secundarios
+  background: "#F3F4F6",       // 🔥 Gris claro para fondo de pantalla
+  
+  // === COLORES PRINCIPALES ===
+  primary: "#374151",           // 🔥 Gris carbón para botones principales
+  primaryHover: "#37291fff",      // 🔥 Gris más oscuro para hover/pressed
+  secondary: "#6B7280",         // 🔥 Gris medio para elementos secundarios
+  
+  // === TEXTOS ===
+  text: "#111827",              // Negro suave para texto principal
+  textSoft: "#6B7280",          // 🔥 Gris para texto secundario
+  textMuted: "#9CA3AF",         // Gris claro para texto deshabilitado
+  textLight: "#D1D5DB",         // Gris muy claro para placeholders
+  
+  // === BORDES Y DIVISORES ===
+  border: "#E5E7EB",            // 🔥 Gris claro para bordes
+  borderDark: "#D1D5DB",        // Gris medio para bordes enfatizados
+  divider: "#F3F4F6",           // Gris muy claro para líneas divisorias
+  
+  // === ACENTOS Y OVERLAYS ===
+  accentLight: "rgba(55, 65, 81, 0.05)",   // 🔥 Overlay gris muy sutil
+  accentMedium: "rgba(55, 65, 81, 0.10)",  // 🔥 Overlay gris sutil
+  accentStrong: "rgba(55, 65, 81, 0.15)",  // 🔥 Overlay gris visible
+  
+  // === ESTADOS ===
+  success: "#10B981",           // Verde para éxito
+  successLight: "#D1FAE5",      // Verde claro para fondos
+  error: "#EF4444",             // Rojo para errores
+  errorLight: "#FEE2E2",        // Rojo claro para fondos
+  warning: "#F59E0B",           // Amarillo para advertencias
+  warningLight: "#FEF3C7",      // Amarillo claro para fondos
+  info: "#3B82F6",              // Azul para información
+  infoLight: "#DBEAFE",         // Azul claro para fondos
+  
+  // === SOMBRAS ===
+  shadow: "rgba(0, 0, 0, 0.05)",     // Sombra muy sutil
+  shadowMedium: "rgba(0, 0, 0, 0.1)", // Sombra media
+  shadowStrong: "rgba(0, 0, 0, 0.15)", // Sombra pronunciada
 };
+
+// Constante para compatibilidad con código existente
 
 import { getDistanceUserToFerreteria } from "@/services/googleDistance";
 import { useUserLocation } from "@/hooks/useUserLocation";
@@ -35,7 +68,7 @@ interface ProductoBusqueda {
   id_producto: string;
   nombre: string;
   precio: number;
-  imagenes: string[];
+  imagen_url?: string | null; // 🔥 CAMBIAR de imagenes a imagen_url
   ferreteria?: {
     razon_social: string;
   } | null;
@@ -91,6 +124,20 @@ export default function SearchScreen() {
 
   // Debounce específico para el input de autocompletado de la cotización
   const debouncedSolicitudNombre = useDebounce(solicitudNombre, 300);
+  const normalizeStorageUrl = (url?: string | null) => {
+  if (!url) return null;
+  
+  // Si ya tiene la estructura correcta, retornar sin cambios
+  if (url.includes('/productos/productos/')) {
+    return url;
+  }
+  
+  // Agregar el /productos/ faltante
+  return url.replace(
+    '/public/productos/',
+    '/public/productos/productos/'
+  );
+};
 
   // 1. Cargar datos iniciales
   useEffect(() => {
@@ -162,9 +209,13 @@ export default function SearchScreen() {
   async function buscar(texto: string) {
     setLoading(true);
     let consulta = supabase.from("producto").select(`
-      id_producto, nombre, precio, imagenes,
-      ferreteria (razon_social), categoria (nombre)
-    `);
+      id_producto, 
+      nombre, 
+      precio, 
+      imagen_url,
+      ferreteria (razon_social), 
+      categoria (nombre)
+    `); // 🔥 CAMBIAR imagenes por imagen_url
 
     if (texto && texto.trim().length > 0) consulta = consulta.ilike("nombre", `%${texto}%`);
     if (categoriaSeleccionada) consulta = consulta.eq("id_categoria", categoriaSeleccionada);
@@ -506,31 +557,64 @@ export default function SearchScreen() {
               </Text>
             ) : null
           }
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              onPress={() => router.push(`/productos/${item.id_producto}`)}
-              style={{
-                backgroundColor: PALETTE.base,
-                marginBottom: 12,
-                padding: 12,
-                borderRadius: 12,
-                flexDirection: "row",
-                gap: 12,
-                borderWidth: 1,
-                borderColor: PALETTE.border,
-              }}
-            >
-               <Image
-                 source={{ uri: item.imagenes?.[0] }}
-                 style={{ width: 60, height: 60, borderRadius: 8, backgroundColor: PALETTE.accentLight }}
-               />
-               <View style={{flex: 1}}>
-                 <Text style={{ color: PALETTE.text, fontWeight: "700" }}>{item.nombre}</Text>
-                 <Text style={{ color: ORANGE, fontSize: 15 }}>${item.precio}</Text>
-                 <Text style={{ color: PALETTE.textSoft, fontSize: 11 }}>{item.ferreteria?.razon_social}</Text>
-               </View>
-            </TouchableOpacity>
-          )}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                onPress={() => router.push(`/productos/${item.id_producto}`)}
+                style={{
+                  backgroundColor: PALETTE.base,
+                  marginBottom: 12,
+                  padding: 12,
+                  borderRadius: 12,
+                  flexDirection: "row",
+                  gap: 12,
+                  borderWidth: 1,
+                  borderColor: PALETTE.border,
+                }}
+              >
+                {/* 🔥 IMAGEN CON NORMALIZACIÓN Y FALLBACK */}
+                {(() => {
+                  const imageUrl = normalizeStorageUrl(item.imagen_url);
+                  
+                  if (!imageUrl) {
+                    return (
+                      <View
+                        style={{
+                          width: 60,
+                          height: 60,
+                          borderRadius: 8,
+                          backgroundColor: PALETTE.accentLight,
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Text style={{ fontSize: 24 }}>🧱</Text>
+                      </View>
+                    );
+                  }
+
+                  return (
+                    <Image
+                      source={{ uri: imageUrl }}
+                      style={{ 
+                        width: 60, 
+                        height: 60, 
+                        borderRadius: 8, 
+                        backgroundColor: PALETTE.accentLight 
+                      }}
+                    />
+                  );
+                })()}
+                
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: PALETTE.text, fontWeight: "700" }}>{item.nombre}</Text>
+                  <Text style={{ color: ORANGE, fontSize: 15 }}>${item.precio}</Text>
+                  <Text style={{ color: PALETTE.textSoft, fontSize: 11 }}>
+                    {item.ferreteria?.razon_social}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            )}
+        
         />
       </View>
     </SafeAreaView>
