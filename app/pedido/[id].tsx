@@ -5,6 +5,8 @@ import {
   ActivityIndicator,
   ScrollView,
   StyleSheet,
+  TouchableOpacity,
+  Alert,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { supabase } from "../../lib/supabaseClient";
@@ -22,7 +24,7 @@ const COLORS = {
 };
 
 /* =======================
-   ESTADOS PARA RETIRO
+   ESTADOS (RETIRO)
 ======================= */
 const STATUS_FLOW = [
   { key: "pagado", label: "Pago confirmado" },
@@ -32,13 +34,22 @@ const STATUS_FLOW = [
 ];
 
 export default function PedidoSeguimiento() {
-  const { id } = useLocalSearchParams();
+  const { id } = useLocalSearchParams<{ id: string }>();
+
   const [pedido, setPedido] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+    useEffect(() => {
+    if (!id) return;
+
     cargarPedido();
-  }, []);
+
+    const interval = setInterval(() => {
+        cargarPedido();
+    }, 5000); // cada 5 segundos
+
+    return () => clearInterval(interval);
+    }, [id]);
 
   async function cargarPedido() {
     const { data, error } = await supabase
@@ -47,11 +58,37 @@ export default function PedidoSeguimiento() {
       .eq("id_pedido", id)
       .single();
 
-    if (!error) {
+    if (error) {
+      console.log("❌ Error cargando pedido:", error);
+    } else {
       setPedido(data);
     }
 
     setLoading(false);
+  }
+
+  async function confirmarRetiro() {
+    const { error } = await supabase
+      .from("pedido")
+      .update({
+        estado: "retirado",
+      })
+      .eq("id_pedido", id);
+
+    if (error) {
+      Alert.alert("Error", "No se pudo confirmar el retiro");
+      return;
+    }
+
+    Alert.alert(
+      "Retiro confirmado",
+      "El pedido fue marcado como retirado correctamente"
+    );
+
+    setPedido({
+      ...pedido,
+      estado: "retirado",
+    });
   }
 
   if (loading) {
@@ -80,10 +117,11 @@ export default function PedidoSeguimiento() {
         {/* HEADER */}
         <Text style={styles.title}>Seguimiento del pedido</Text>
 
+        {/* DATOS PEDIDO */}
         <View style={styles.card}>
-          <Text style={styles.label}>Código del pedido</Text>
+          <Text style={styles.label}>ID del pedido</Text>
           <Text style={styles.value}>
-            #{pedido.id_pedido.slice(0, 8).toUpperCase()}
+            #{id.slice(0, 8).toUpperCase()}
           </Text>
 
           <Text style={[styles.label, { marginTop: 12 }]}>
@@ -92,7 +130,7 @@ export default function PedidoSeguimiento() {
           <Text style={styles.value}>Retiro en tienda</Text>
         </View>
 
-        {/* PROGRESO */}
+        {/* TIMELINE */}
         <View style={styles.timeline}>
           {STATUS_FLOW.map((step, index) => {
             const isActive = index <= currentStep;
@@ -140,7 +178,7 @@ export default function PedidoSeguimiento() {
           })}
         </View>
 
-        {/* MENSAJE SEGÚN ESTADO */}
+        {/* MENSAJE */}
         <View style={styles.card}>
           {pedido.estado === "pagado" && (
             <Text style={styles.info}>
@@ -169,6 +207,24 @@ export default function PedidoSeguimiento() {
             </Text>
           )}
         </View>
+
+        {/* BOTÓN CONFIRMAR RETIRO */}
+        {pedido.estado === "listo_retiro" && (
+          <View style={{ marginBottom: 40 }}>
+            <TouchableOpacity
+              onPress={confirmarRetiro}
+              style={styles.btn}
+            >
+              <Text style={styles.btnText}>
+                Confirmar retiro
+              </Text>
+            </TouchableOpacity>
+
+            <Text style={styles.hint}>
+              Confirma solo cuando hayas retirado tu pedido
+            </Text>
+          </View>
+        )}
       </View>
     </ScrollView>
   );
@@ -237,5 +293,22 @@ const styles = StyleSheet.create({
   info: {
     fontSize: 15,
     color: COLORS.textDark,
+  },
+  btn: {
+    backgroundColor: COLORS.primary,
+    padding: 16,
+    borderRadius: 14,
+    alignItems: "center",
+  },
+  btnText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  hint: {
+    textAlign: "center",
+    color: COLORS.muted,
+    fontSize: 12,
+    marginTop: 8,
   },
 });
