@@ -10,7 +10,6 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
-  Image,
   PanResponder,
   StyleSheet,
   Text,
@@ -18,6 +17,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Image } from "expo-image";
+
+
+
 
 
 
@@ -35,9 +38,26 @@ const PALETTE = {
   accentLight: "rgba(152, 97, 50, 0.10)",
 };
 
+
+
 const ORANGE = PALETTE.primary;
 const DARK_BG = PALETTE.base;
 const CARD_BG = PALETTE.soft;
+
+const normalizeStorageUrl = (url?: string | null) => {
+  if (!url) return null;
+  
+  // Si ya tiene la estructura correcta, retornar sin cambios
+  if (url.includes('/productos/productos/')) {
+    return url;
+  }
+  
+  // Agregar el /productos/ faltante
+  return url.replace(
+    '/public/productos/',
+    '/public/productos/productos/'
+  );
+};
 
 const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
 
@@ -392,11 +412,53 @@ export default function HomeScreen() {
                       borderColor: PALETTE.border,
                     }}
                   >
-                    <Image
-                      source={{ uri: item.imagenes?.[0] }}
-                      style={{ width: "100%", height: 110 }}
-                      resizeMode="cover"
-                    />
+                      
+                  {(() => {
+                    console.log("DEBUG producto cercano:", {
+                      id_producto: item.id_producto,
+                      imagen_url: item.imagen_url,
+                    });
+                    return null;
+                  })()}
+
+                  {(() => {
+                    const fixedUrl = normalizeStorageUrl(item.imagen_url);
+
+                    console.log("DEBUG imagen final:", fixedUrl);
+
+                    if (!fixedUrl) {
+                      return (
+                        <View
+                          style={{
+                            width: "100%",
+                            height: 110,
+                            backgroundColor: PALETTE.accentLight,
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <Text style={{ fontSize: 28 }}>🧱</Text>
+                        </View>
+                      );
+                    }
+
+                    return (
+                        <Image
+                          source={fixedUrl}
+                          style={{
+                            width: "100%",
+                            height: 110,
+                          }}
+                          contentFit="cover"
+                          transition={200}
+                        />
+
+
+                    );
+                  })()}
+
+
+          
                     <View style={{ padding: 10 }}>
                       <Text numberOfLines={1} style={{ color: PALETTE.text, fontWeight: "600" }}>
                         {item.nombre}
