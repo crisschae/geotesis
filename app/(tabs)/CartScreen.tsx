@@ -108,27 +108,40 @@ export default function CartScreen() {
       // Simulación procesamiento
       await new Promise((r) => setTimeout(r, 1200));
 
-      await supabase.from("pedido").insert({
-        id_cliente: clienteId,
-        id_ferreteria: cart[0].id_ferreteria,
-        monto_total: total,
-        estado: "pagado",
-        gateway: "stripe",
-        gateway_ref: `geoferre_${Date.now()}`,
-        paid_at: new Date().toISOString(),
-      });
+      const { data: pedidoInsertado, error } = await supabase
+        .from("pedido")
+        .insert({
+          id_cliente: clienteId,
+          id_ferreteria: cart[0].id_ferreteria,
+          monto_total: total,
+          estado: "pagado",
+          gateway: "stripe",
+          gateway_ref: `geoferre_${Date.now()}`,
+          paid_at: new Date().toISOString(),
+        })
+        .select("id_pedido")
+        .single();
+
+      if (error) {
+        console.log("❌ Error creando pedido:", error);
+        throw error;
+      }
 
       setShowPagoModal(false);
       clearCart();
 
-      Alert.alert("Pago exitoso", "Compra realizada con éxito");
-      router.replace("/");
+      // ✅ REDIRECCIÓN AL SEGUIMIENTO DEL PEDIDO
+      router.replace({
+        pathname: "/pedido/[id]",
+        params: { id: pedidoInsertado.id_pedido },
+      });
     } catch (e: any) {
       Alert.alert("Error", e.message);
     } finally {
       setLoading(false);
     }
   }
+
 
   if (cart.length === 0) {
     return (
