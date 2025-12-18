@@ -6,6 +6,7 @@ export async function getProductosCercanos(
   lon: number,
   radioKm = 10
 ) {
+  console.log("🚨 ENTRO A getProductosCercanos", { lat, lon, radioKm });
   // 🔹 Obtener ferreterías
   const { data: ferreterias, error: err1 } = await supabase
     .from("ferreteria")
@@ -34,14 +35,18 @@ export async function getProductosCercanos(
   const { data: productos, error: err2 } = await supabase
     .from("producto")
     .select(
-      "id_producto, nombre, precio, imagenes, id_ferreteria, ferreteria(razon_social)"
+      "id_producto, nombre, precio, imagenes, imagen_url, id_ferreteria, ferreteria(razon_social)"
     )
     .in("id_ferreteria", ids);
 
-  if (err2 || !productos) {
-    console.error("Error cargando productos cercanos:", err2);
-    return [];
-  }
+    if (err2 || !productos) {
+      console.error("Error cargando productos cercanos:", err2);
+      return [];
+    }
 
-  return productos;
+    // 🔴 CONSOLE EXACTO AQUÍ
+    console.log("DEBUG SERVICE productos cercanos:", productos);
+
+    return productos;
+
 }

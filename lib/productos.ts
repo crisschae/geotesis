@@ -94,17 +94,19 @@ export async function getProductosCercanos(
       nombre,
       precio,
       imagenes,
+      imagen_url,
       id_ferreteria,
       ferreteria(razon_social)
     `)
     .in("id_ferreteria", ids);
-
+  
   if (err2) {
     console.error("Error cargando productos cercanos:", err2);
     return [];
   }
-
+  
   return productos ?? [];
+  
 }
 
 
