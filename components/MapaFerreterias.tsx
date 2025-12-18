@@ -189,28 +189,44 @@ export function MapaFerreterias({
   // ============================================================
   // 🔹 Generar ruta visual
   // ============================================================
-  async function generarRuta(dest: { lat: number; lng: number }) {
-    if (!loc?.location) return;
+    async function generarRuta(dest: { lat: number; lng: number }) {
+      if (!loc?.location || !mapRef.current) return;
 
-    const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${loc.location.latitude},${loc.location.longitude}&destination=${dest.lat},${dest.lng}&mode=driving&language=es&key=${process.env.EXPO_PUBLIC_GOOGLE_API_KEY}`;
+      const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${loc.location.latitude},${loc.location.longitude}&destination=${dest.lat},${dest.lng}&mode=driving&language=es&key=${process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY}`;
 
-    try {
-      const resp = await fetch(url);
-      const data = await resp.json();
+      try {
+        const resp = await fetch(url);
+        const data = await resp.json();
 
-      if (!data.routes || data.routes.length === 0) {
-        console.log("❌ No se encontraron rutas.");
-        return;
+        if (!data.routes || data.routes.length === 0) {
+          console.log("❌ No se encontraron rutas.");
+          return;
+        }
+
+        const points = data.routes[0].overview_polyline.points;
+        const decoded = decodePolyline(points);
+
+        // 1️⃣ Guardar la ruta
+        setRouteCoords(decoded);
+
+        // 2️⃣ Ajustar el mapa a TODA la ruta (como Google Maps)
+        setTimeout(() => {
+          mapRef.current?.fitToCoordinates(decoded, {
+            edgePadding: {
+              top: 120,
+              right: 60,
+              bottom: 180, // espacio para bottom sheet
+              left: 60,
+            },
+            animated: true,
+          });
+        }, 200);
+
+      } catch (error) {
+        console.log("❌ Error generando ruta:", error);
       }
-
-      const points = data.routes[0].overview_polyline.points;
-      const decoded = decodePolyline(points);
-      setRouteCoords(decoded);
-
-    } catch (error) {
-      console.log("❌ Error generando ruta:", error);
     }
-  }
+
 
   // ============================================================
   // 🔹 RENDER

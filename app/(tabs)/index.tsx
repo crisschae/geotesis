@@ -22,6 +22,7 @@ import {
 
 
 
+
 const PALETTE = {
   base: "#ffffff",
   primary: "#986132",      // fuerte principal
@@ -38,7 +39,7 @@ const ORANGE = PALETTE.primary;
 const DARK_BG = PALETTE.base;
 const CARD_BG = PALETTE.soft;
 
-const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_API_KEY;
+const GOOGLE_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
 
 
 export default function HomeScreen() {
@@ -159,7 +160,7 @@ export default function HomeScreen() {
   const obtenerTiempoRuta = async (origen: any, destino: any) => {
     try {
       setLoadingRuta(true);
-      const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_API_KEY;
+      const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
       const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origen.lat},${origen.lng}&destination=${destino.lat},${destino.lng}&mode=driving&language=es&key=${API_KEY}`;
 
       const response = await fetch(url);

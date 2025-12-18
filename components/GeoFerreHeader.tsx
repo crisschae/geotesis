@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Image } from "react-native";
+import { SafeAreaView, View, Text, StyleSheet, Image } from "react-native";
 
 const PALETTE = {
   primary: "#986132",
@@ -9,33 +9,38 @@ const PALETTE = {
 
 export default function GeoFerreHeader() {
   return (
-    <View style={styles.container}>
-      {/* LOGO (puedes cambiar por imagen cuando quieras) */}
-      <View style={styles.logoContainer}>
-        <Image
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.container}>
+        {/* LOGO */}
+        <View style={styles.logoContainer}>
+          <Image
             source={require("../assets/images/ferre.png")}
-            style={{ width: 35, height: 35 }}
-            />
+            style={{ width: 28, height: 28 }}
+            resizeMode="contain"
+          />
+        </View>
 
+        {/* TEXTO */}
+        <View style={styles.textContainer}>
+          <Text style={styles.title}>GeoFerre</Text>
+          <Text style={styles.subtitle}>Marketplace Ferretero Local</Text>
+        </View>
       </View>
-
-      {/* TEXTO */}
-      <View style={styles.textContainer}>
-        <Text style={styles.title}>GeoFerre</Text>
-        <Text style={styles.subtitle}>Marketplace ferretero local</Text>
-      </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safe: {
+    backgroundColor: PALETTE.base,
+  },
   container: {
+    height: 56,
+    paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
   },
-
-  /* LOGO */
   logoContainer: {
     width: 34,
     height: 34,
@@ -44,20 +49,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  logoIcon: {
-    fontSize: 18,
-  },
-
-  /* TEXTO */
   textContainer: {
     flexDirection: "column",
-    lineHeight: 18,
   },
   title: {
     fontSize: 17,
     fontWeight: "700",
     color: PALETTE.primary,
-    letterSpacing: 0.3,
   },
   subtitle: {
     fontSize: 11,
