@@ -35,7 +35,7 @@ interface ProductoBusqueda {
   id_producto: string;
   nombre: string;
   precio: number;
-  imagenes: string[];
+  imagen_url?: string | null; // 🔥 CAMBIAR de imagenes a imagen_url
   ferreteria?: {
     razon_social: string;
   } | null;
@@ -91,6 +91,20 @@ export default function SearchScreen() {
 
   // Debounce específico para el input de autocompletado de la cotización
   const debouncedSolicitudNombre = useDebounce(solicitudNombre, 300);
+  const normalizeStorageUrl = (url?: string | null) => {
+  if (!url) return null;
+  
+  // Si ya tiene la estructura correcta, retornar sin cambios
+  if (url.includes('/productos/productos/')) {
+    return url;
+  }
+  
+  // Agregar el /productos/ faltante
+  return url.replace(
+    '/public/productos/',
+    '/public/productos/productos/'
+  );
+};
 
   // 1. Cargar datos iniciales
   useEffect(() => {
@@ -162,9 +176,13 @@ export default function SearchScreen() {
   async function buscar(texto: string) {
     setLoading(true);
     let consulta = supabase.from("producto").select(`
-      id_producto, nombre, precio, imagenes,
-      ferreteria (razon_social), categoria (nombre)
-    `);
+      id_producto, 
+      nombre, 
+      precio, 
+      imagen_url,
+      ferreteria (razon_social), 
+      categoria (nombre)
+    `); // 🔥 CAMBIAR imagenes por imagen_url
 
     if (texto && texto.trim().length > 0) consulta = consulta.ilike("nombre", `%${texto}%`);
     if (categoriaSeleccionada) consulta = consulta.eq("id_categoria", categoriaSeleccionada);
@@ -506,31 +524,64 @@ export default function SearchScreen() {
               </Text>
             ) : null
           }
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              onPress={() => router.push(`/productos/${item.id_producto}`)}
-              style={{
-                backgroundColor: PALETTE.base,
-                marginBottom: 12,
-                padding: 12,
-                borderRadius: 12,
-                flexDirection: "row",
-                gap: 12,
-                borderWidth: 1,
-                borderColor: PALETTE.border,
-              }}
-            >
-               <Image
-                 source={{ uri: item.imagenes?.[0] }}
-                 style={{ width: 60, height: 60, borderRadius: 8, backgroundColor: PALETTE.accentLight }}
-               />
-               <View style={{flex: 1}}>
-                 <Text style={{ color: PALETTE.text, fontWeight: "700" }}>{item.nombre}</Text>
-                 <Text style={{ color: ORANGE, fontSize: 15 }}>${item.precio}</Text>
-                 <Text style={{ color: PALETTE.textSoft, fontSize: 11 }}>{item.ferreteria?.razon_social}</Text>
-               </View>
-            </TouchableOpacity>
-          )}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                onPress={() => router.push(`/productos/${item.id_producto}`)}
+                style={{
+                  backgroundColor: PALETTE.base,
+                  marginBottom: 12,
+                  padding: 12,
+                  borderRadius: 12,
+                  flexDirection: "row",
+                  gap: 12,
+                  borderWidth: 1,
+                  borderColor: PALETTE.border,
+                }}
+              >
+                {/* 🔥 IMAGEN CON NORMALIZACIÓN Y FALLBACK */}
+                {(() => {
+                  const imageUrl = normalizeStorageUrl(item.imagen_url);
+                  
+                  if (!imageUrl) {
+                    return (
+                      <View
+                        style={{
+                          width: 60,
+                          height: 60,
+                          borderRadius: 8,
+                          backgroundColor: PALETTE.accentLight,
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Text style={{ fontSize: 24 }}>🧱</Text>
+                      </View>
+                    );
+                  }
+
+                  return (
+                    <Image
+                      source={{ uri: imageUrl }}
+                      style={{ 
+                        width: 60, 
+                        height: 60, 
+                        borderRadius: 8, 
+                        backgroundColor: PALETTE.accentLight 
+                      }}
+                    />
+                  );
+                })()}
+                
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: PALETTE.text, fontWeight: "700" }}>{item.nombre}</Text>
+                  <Text style={{ color: ORANGE, fontSize: 15 }}>${item.precio}</Text>
+                  <Text style={{ color: PALETTE.textSoft, fontSize: 11 }}>
+                    {item.ferreteria?.razon_social}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            )}
+        
         />
       </View>
     </SafeAreaView>
