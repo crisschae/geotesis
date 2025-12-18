@@ -1,3 +1,6 @@
+// ========================================
+// 1. _layout.tsx (ROOT) - ELIMINAR header global
+// ========================================
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
@@ -7,8 +10,6 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import { useColorScheme } from '../hooks/useColorScheme';
-import GeoFerreHeader from "@/components/GeoFerreHeader";
-
 
 export {
   ErrorBoundary,
@@ -51,20 +52,26 @@ function RootLayoutNav() {
       <ActionSheetProvider>
         <Stack
           screenOptions={{
-            header: () => <GeoFerreHeader />,
-            headerShadowVisible: false,
+            // 🔥 SIN HEADER GLOBAL - cada grupo controla el suyo
+            headerShown: false,
           }}
         >
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-
-          {/* Tabs NO renderizan header propio */}
+          
+          {/* Tabs controlan su propio header */}
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-
-          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+          
+          {/* Modal con header personalizado si lo necesitas */}
+          <Stack.Screen 
+            name="modal" 
+            options={{ 
+              presentation: 'modal',
+              headerShown: true, // Solo si quieres header en modal
+            }} 
+          />
         </Stack>
       </ActionSheetProvider>
     </ThemeProvider>
   );
 }
-

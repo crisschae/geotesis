@@ -1,3 +1,4 @@
+// components/GeoFerreHeader.tsx
 import { SafeAreaView, View, Text, StyleSheet, Image } from "react-native";
 
 const PALETTE = {

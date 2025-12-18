@@ -1,3 +1,6 @@
+// ============================================
+// 1. (tabs)/_layout.tsx - Header para TODAS las tabs
+// ============================================
 import { useClientOnlyValue } from "@/components/useClientOnlyValue";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { Tabs } from "expo-router";
@@ -39,8 +42,8 @@ export default function TabLayout() {
             fontSize: 11,
           },
 
-          /* ---------- HEADER GEOFERRE ---------- */
-          headerShown: useClientOnlyValue(false, true),
+          /* ---------- HEADER GEOFERRE (GLOBAL) ---------- */
+          headerShown: true, // ✅ VISIBLE EN TODAS LAS TABS
           headerTitle: () => <GeoFerreHeader />,
           headerStyle: {
             backgroundColor: PALETTE.base,
@@ -48,6 +51,7 @@ export default function TabLayout() {
           headerShadowVisible: false,
         }}
       >
+        {/* ✅ TODAS LAS SCREENS CON HEADER */}
         <Tabs.Screen
           name="index"
           options={{
@@ -55,6 +59,7 @@ export default function TabLayout() {
             tabBarIcon: ({ color }) => (
               <TabBarIcon name="home" color={color} />
             ),
+            // headerShown ya es true por default
           }}
         />
 
@@ -88,7 +93,6 @@ export default function TabLayout() {
           }}
         />
 
-        {/* Pantallas ocultas del tab */}
         <Tabs.Screen
           name="quote-detail/[id]"
           options={{ href: null }}
