@@ -1,6 +1,12 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 import { supabase } from '@/lib/supabaseClient';
 
@@ -13,6 +19,7 @@ const PALETTE = {
   textSoft: '#4b3323',
   border: '#edd8c4',
 };
+
 const ORANGE = PALETTE.primary;
 const DARK_BG = PALETTE.base;
 const CARD_BG = PALETTE.soft;
@@ -34,7 +41,6 @@ export default function ProfileScreen() {
       } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        // Si no hay usuario, volver al login
         router.replace('/(auth)/login');
         return;
       }
@@ -51,7 +57,6 @@ export default function ProfileScreen() {
           email: data.email,
         });
       } else {
-        // Fallback: al menos mostrar el email de auth
         setPerfil({
           nombre: user.user_metadata?.name ?? null,
           email: user.email ?? 'sin-correo',
@@ -69,25 +74,37 @@ export default function ProfileScreen() {
     router.replace('/(auth)/login');
   };
 
+  /* =========================
+     ITEM DE SECCIÓN (CLICKEABLE)
+  ========================= */
   const SectionItem = ({
     title,
     subtitle,
     icon,
+    onPress,
   }: {
     title: string;
     subtitle: string;
     icon: string;
+    onPress?: () => void;
   }) => (
-    <View style={styles.sectionCard}>
+    <TouchableOpacity
+      style={styles.sectionCard}
+      activeOpacity={0.85}
+      onPress={onPress}
+      disabled={!onPress}
+    >
       <View style={styles.sectionIconCircle}>
         <Text style={styles.sectionIcon}>{icon}</Text>
       </View>
+
       <View style={styles.sectionTextWrapper}>
         <Text style={styles.sectionTitle}>{title}</Text>
         <Text style={styles.sectionSubtitle}>{subtitle}</Text>
       </View>
+
       <Text style={styles.sectionChevron}>{'>'}</Text>
-    </View>
+    </TouchableOpacity>
   );
 
   const nombreMostrado =
@@ -113,6 +130,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.screen}>
+      {/* HEADER */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Mi Perfil</Text>
 
@@ -120,6 +138,7 @@ export default function ProfileScreen() {
           <View style={styles.avatarCircle}>
             <Text style={styles.avatarInitials}>{iniciales}</Text>
           </View>
+
           <View style={styles.avatarTextWrapper}>
             <Text style={styles.avatarName}>{nombreMostrado}</Text>
             <Text style={styles.avatarEmail}>{perfil.email}</Text>
@@ -127,6 +146,7 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+      {/* CONTENIDO */}
       <View style={styles.content}>
         <Text style={styles.sectionGroupLabel}>Mi Cuenta</Text>
 
@@ -135,24 +155,33 @@ export default function ProfileScreen() {
           subtitle="Información de cuenta"
           icon="👤"
         />
+
         <SectionItem
           title="Mis direcciones"
           subtitle="Agregar o editar ubicaciones"
           icon="📍"
         />
+
+        {/* 👉 CONECTADO A MIS PEDIDOS */}
         <SectionItem
           title="Historial de compras"
-          subtitle="Seguimiento y cotizaciones guardadas"
+          subtitle="Seguimiento de tus pedidos"
           icon="🛒"
+          onPress={() => router.push('../mis-pedidos')}
         />
 
-        <Text style={[styles.sectionGroupLabel, { marginTop: 24 }]}>Configuración</Text>
+        <Text
+          style={[styles.sectionGroupLabel, { marginTop: 24 }]}
+        >
+          Configuración
+        </Text>
 
         <SectionItem
           title="Notificaciones"
           subtitle="Preferencias de alertas"
           icon="🔔"
         />
+
         <SectionItem
           title="Seguridad y privacidad"
           subtitle="Gestión de datos y permisos"
@@ -160,13 +189,20 @@ export default function ProfileScreen() {
         />
       </View>
 
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+      {/* LOGOUT */}
+      <TouchableOpacity
+        style={styles.logoutButton}
+        onPress={handleLogout}
+      >
         <Text style={styles.logoutText}>Cerrar sesión</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
+/* =========================
+   ESTILOS
+========================= */
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
