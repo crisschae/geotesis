@@ -95,8 +95,8 @@ app.post("/pago/checkout", async (req, res) => {
           quantity: 1,
         },
       ],
-      success_url: "geoferre://payment-return?status=success",
-      cancel_url: "geoferre://payment-return?status=cancel",
+      success_url: "https://geoferre.app/pago-exitoso",
+      cancel_url: "https://geoferre.app/pago-cancelado",
     });
 
     return res.json({ url: session.url });
