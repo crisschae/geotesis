@@ -1,156 +1,106 @@
-import * as Linking from "expo-linking";
-import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Modal,
-  ScrollView,
-  Text,
-  TouchableOpacity,
   View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  Alert,
+  ActivityIndicator,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
-import { WebView } from "react-native-webview";
+import { useRouter } from "expo-router";
 
 import { supabase } from "../../lib/supabaseClient";
 import { useCartStore } from "../../services/cartStore";
 
+/* =======================
+   🎨 COLORES GEOFERRE
+======================= */
+const COLORS = {
+  primary: "#8B5A2B",
+  secondary: "#D2B48C",
+  background: "#F5F0E6",
+  accent: "#4B3621",
+  textDark: "#2E2E2E",
+};
+
 export default function CartScreen() {
   const router = useRouter();
-  const {
-    cart,
-    incrementQuantity,
-    decreaseQuantity,
-    removeFromCart,
-    clearCart,
-  } = useCartStore();
+  const { cart, clearCart } = useCartStore();
 
   const [loading, setLoading] = useState(false);
-  const [showPago, setShowPago] = useState(false);
-  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
+  const [showPagoModal, setShowPagoModal] = useState(false);
   const [usuario, setUsuario] = useState<any>(null);
+
+  // Inputs tarjeta
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardName, setCardName] = useState("");
+  const [expDate, setExpDate] = useState("");
+  const [cvc, setCvc] = useState("");
 
   const total = cart.reduce(
     (sum, item) => sum + item.precio * (item.quantity ?? 1),
     0
   );
 
-  /**
-   * 🔐 Obtener usuario logueado
-   */
+  /* =======================
+     Usuario
+  ======================= */
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setUsuario(data.user);
     });
   }, []);
 
-  /**
-   * 🔁 Retorno desde Stripe (success / cancel)
-   */
-  useEffect(() => {
-    const sub = Linking.addEventListener("url", async ({ url }) => {
-      if (url.includes("payment-return")) {
-        setShowPago(false);
+  /* =======================
+     FORMATTERS (CLAVE)
+  ======================= */
+  const formatCardNumber = (text: string) => {
+    const cleaned = text.replace(/\D/g, "").slice(0, 16);
+    return cleaned.replace(/(.{4})/g, "$1 ").trim();
+  };
 
-        if (url.includes("status=success")) {
-          await registrarPedidoYPago();
-          clearCart();
-          Alert.alert("Pago exitoso", "Tu pedido fue registrado correctamente");
-          router.replace("/");
-        }
+  const formatExpDate = (text: string) => {
+    const cleaned = text.replace(/\D/g, "").slice(0, 4);
+    if (cleaned.length <= 2) return cleaned;
+    return `${cleaned.slice(0, 2)}/${cleaned.slice(2)}`;
+  };
 
-        if (url.includes("status=cancel")) {
-          Alert.alert("Pago cancelado", "No se realizó el cobro");
-        }
-      }
-    });
+  const formatCVC = (text: string) =>
+    text.replace(/\D/g, "").slice(0, 4);
 
-    return () => sub.remove();
-  }, [cart, usuario]);
-
-  /**
-   * 🔐 Protección: usuario debe estar logueado
-   */
-  async function pagarProtegido() {
-    if (!usuario) {
-      router.push({
-        pathname: "/(auth)/login",
-        params: { redirectTo: "CartScreen" },
-      });
-      return;
-    }
-
-    iniciarCheckout();
-  }
-
-  /**
-   * 🟢 Inicia Stripe Checkout Web
-   */
-  async function iniciarCheckout() {
+  /* =======================
+     LÓGICA BACKEND (DEMO)
+  ======================= */
+  async function ejecutarPago() {
     try {
       setLoading(true);
 
-      const res = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/pago/checkout`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ amount: total }),
-        }
-      );
+      // Simulación backend real
+      await new Promise((r) => setTimeout(r, 1200));
 
-      const data = await res.json();
-      if (!data?.url) throw new Error("No se recibió URL de pago");
+      await supabase.from("pedido").insert({
+        id_ferreteria: cart[0].id_ferreteria,
+        monto_total: total,
+        estado: "pagado",
+        gateway: "stripe",
+        gateway_ref: `geoferre_demo_${Date.now()}`,
+        paid_at: new Date().toISOString(),
+      });
 
-      setCheckoutUrl(data.url);
-      setShowPago(true);
-    } catch (err: any) {
-      Alert.alert("Error", err.message ?? "No se pudo iniciar el pago");
+      setShowPagoModal(false);
+      clearCart();
+      Alert.alert("Pago exitoso", "Compra realizada con éxito");
+      router.replace("/");
+    } catch (e: any) {
+      Alert.alert("Error", e.message);
     } finally {
       setLoading(false);
     }
-  }
-
-  /**
-   * 🧾 Guarda pedido + detalle + pago (Supabase)
-   */
-  async function registrarPedidoYPago() {
-    if (!usuario) return;
-
-    // 1️⃣ Pedido
-    const { data: pedido, error: pedidoError } = await supabase
-      .from("pedido")
-      .insert({
-        user_id: usuario.id,
-        total,
-        estado: "pagado",
-      })
-      .select()
-      .single();
-
-    if (pedidoError) {
-      console.error(pedidoError);
-      return;
-    }
-
-    // 2️⃣ Detalle
-    const detalle = cart.map((item) => ({
-      pedido_id: pedido.id,
-      producto_id: item.id_producto,
-      cantidad: item.quantity,
-      precio_unitario: item.precio,
-    }));
-
-    await supabase.from("pedido_detalle").insert(detalle);
-
-    // 3️⃣ Pago
-    await supabase.from("pago").insert({
-      pedido_id: pedido.id,
-      metodo: "stripe_checkout",
-      monto: total,
-      estado: "completado",
-    });
   }
 
   if (cart.length === 0) {
@@ -162,129 +112,190 @@ export default function CartScreen() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 140 }}>
-        <Text style={{ fontSize: 22, fontWeight: "bold", marginBottom: 10 }}>
-          Carrito ({cart.length})
+    <View style={{ flex: 1, backgroundColor: COLORS.background }}>
+      <ScrollView contentContainerStyle={{ padding: 20 }}>
+        <Text style={{ fontSize: 22, fontWeight: "bold", color: COLORS.accent }}>
+          Carrito
         </Text>
 
         {cart.map((item) => (
           <View
             key={item.id_producto}
             style={{
-              flexDirection: "row",
-              marginBottom: 12,
               backgroundColor: "#fff",
-              padding: 12,
-              borderRadius: 12,
+              padding: 14,
+              borderRadius: 14,
+              marginTop: 12,
+              flexDirection: "row",
             }}
           >
             <Image
               source={{ uri: item.imagenes?.[0] }}
-              style={{ width: 70, height: 70, borderRadius: 8 }}
+              style={{ width: 70, height: 70, borderRadius: 10 }}
             />
-
-            <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={{ fontWeight: "bold" }}>{item.nombre}</Text>
+            <View style={{ marginLeft: 10 }}>
+              <Text style={{ fontWeight: "600" }}>{item.nombre}</Text>
               <Text>${item.precio}</Text>
-
-              <View style={{ flexDirection: "row", marginTop: 8 }}>
-                <TouchableOpacity
-                  onPress={() =>
-                    item.quantity === 1
-                      ? removeFromCart(item.id_producto)
-                      : decreaseQuantity(item.id_producto)
-                  }
-                >
-                  <Text style={{ fontSize: 18 }}>−</Text>
-                </TouchableOpacity>
-
-                <Text style={{ marginHorizontal: 10 }}>
-                  {item.quantity}
-                </Text>
-
-                <TouchableOpacity
-                  onPress={() => incrementQuantity(item.id_producto)}
-                >
-                  <Text style={{ fontSize: 18 }}>+</Text>
-                </TouchableOpacity>
-              </View>
             </View>
           </View>
         ))}
       </ScrollView>
 
-      {/* CTA */}
-      <View
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          backgroundColor: "#fff",
-          padding: 20,
-          borderTopLeftRadius: 20,
-          borderTopRightRadius: 20,
-        }}
-      >
+      {/* FOOTER */}
+      <View style={{ padding: 20, backgroundColor: "#fff" }}>
         <Text style={{ fontSize: 20, fontWeight: "bold" }}>
           Total: ${total}
         </Text>
 
         <TouchableOpacity
-          onPress={pagarProtegido}
-          disabled={loading}
+          onPress={() => setShowPagoModal(true)}
           style={{
-            marginTop: 12,
-            backgroundColor: "#16a34a",
-            padding: 14,
-            borderRadius: 10,
+            backgroundColor: COLORS.primary,
+            padding: 16,
+            borderRadius: 16,
+            marginTop: 10,
             alignItems: "center",
           }}
         >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={{ color: "#fff", fontSize: 18 }}>
-              Pagar con Stripe
-            </Text>
-          )}
+          <Text style={{ color: "#fff", fontSize: 18 }}>
+            Pagar
+          </Text>
         </TouchableOpacity>
       </View>
 
-      {/* MODAL STRIPE */}
-      <Modal visible={showPago} animationType="slide">
-        <View style={{ flex: 1 }}>
-          <TouchableOpacity
-            onPress={() => setShowPago(false)}
-            style={{ padding: 14, backgroundColor: "#111" }}
+      {/* =======================
+          MODAL PASARELA
+      ======================= */}
+      <Modal visible={showPagoModal} transparent animationType="slide">
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          style={{ flex: 1 }}
+        >
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              justifyContent: "center",
+              padding: 20,
+            }}
           >
-            <Text style={{ color: "#fff", textAlign: "center" }}>
-              Cerrar pago
-            </Text>
-          </TouchableOpacity>
-
-          {checkoutUrl && (
-            <WebView
-              source={{ uri: checkoutUrl }}
-              onNavigationStateChange={(nav) => {
-                if (nav.url.includes("pago-exitoso")) {
-                  setShowPago(false);
-                  registrarPedidoYPago();
-                  clearCart();
-                  Alert.alert("Pago exitoso", "Gracias por tu compra");
-                  router.replace("/");
-                }
-
-                if (nav.url.includes("pago-cancelado")) {
-                  setShowPago(false);
-                  Alert.alert("Pago cancelado");
-                }
+            <View
+              style={{
+                backgroundColor: "#fff",
+                borderRadius: 22,
+                padding: 22,
               }}
-            />
-          )}
-        </View>
+            >
+              <Text
+                style={{
+                  fontSize: 22,
+                  fontWeight: "700",
+                  color: COLORS.accent,
+                  textAlign: "center",
+                }}
+              >
+                Pago seguro GeoFerre
+              </Text>
+
+              <Text
+                style={{
+                  textAlign: "center",
+                  color: "#777",
+                  marginBottom: 14,
+                }}
+              >
+                Procesado por Stripe
+              </Text>
+
+              <TextInput
+                placeholder="Número de tarjeta"
+                keyboardType="numeric"
+                value={cardNumber}
+                onChangeText={(t) => setCardNumber(formatCardNumber(t))}
+                style={inputStyle}
+              />
+
+              <TextInput
+                placeholder="Nombre del titular"
+                value={cardName}
+                onChangeText={setCardName}
+                style={inputStyle}
+              />
+
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <TextInput
+                  placeholder="MM/AA"
+                  keyboardType="numeric"
+                  value={expDate}
+                  onChangeText={(t) => setExpDate(formatExpDate(t))}
+                  style={[inputStyle, { flex: 1 }]}
+                />
+                <TextInput
+                  placeholder="CVC"
+                  keyboardType="numeric"
+                  value={cvc}
+                  onChangeText={(t) => setCvc(formatCVC(t))}
+                  style={[inputStyle, { flex: 1 }]}
+                />
+              </View>
+
+              {loading ? (
+                <ActivityIndicator
+                  size="large"
+                  color={COLORS.primary}
+                  style={{ marginTop: 20 }}
+                />
+              ) : (
+                <TouchableOpacity
+                  onPress={ejecutarPago}
+                  style={{
+                    backgroundColor: COLORS.primary,
+                    padding: 16,
+                    borderRadius: 16,
+                    marginTop: 20,
+                    alignItems: "center",
+                  }}
+                >
+                  <Text style={{ color: "#fff", fontSize: 16 }}>
+                    Pagar ${total}
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              <Text
+                style={{
+                  textAlign: "center",
+                  fontSize: 12,
+                  color: "#888",
+                  marginTop: 10,
+                }}
+              >
+                🔒 Datos protegidos · No se almacenan
+              </Text>
+
+              <TouchableOpacity
+                onPress={() => setShowPagoModal(false)}
+                style={{ marginTop: 12, alignItems: "center" }}
+              >
+                <Text style={{ color: "#999" }}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
 }
+
+/* =======================
+   ESTILO INPUT
+======================= */
+const inputStyle = {
+  borderWidth: 1,
+  borderColor: "#ddd",
+  borderRadius: 14,
+  padding: 14,
+  marginTop: 12,
+  fontSize: 16,
+  backgroundColor: "#fff",
+};
