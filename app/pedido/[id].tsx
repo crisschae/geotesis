@@ -1,27 +1,18 @@
+import GeoFerreHeader from "@/components/GeoFerreHeader";
+import Colors from "@/constants/Colors";
+import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  View,
-  Text,
   ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
-  TouchableOpacity,
-  Alert,
+  Text,
+  View
 } from "react-native";
-import { useLocalSearchParams } from "expo-router";
 import { supabase } from "../../lib/supabaseClient";
 
-/* =======================
-   🎨 COLORES GEOFERRE
-======================= */
-const COLORS = {
-  primary: "#8B5A2B",
-  secondary: "#D2B48C",
-  background: "#F5F0E6",
-  accent: "#4B3621",
-  muted: "#999",
-  textDark: "#2E2E2E",
-};
+const PALETTE = Colors.palette;
 
 /* =======================
    ESTADOS (RETIRO)
@@ -93,16 +84,22 @@ export default function PedidoSeguimiento() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+      <View style={styles.container}>
+        <GeoFerreHeader />
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={PALETTE.primary} />
+        </View>
       </View>
     );
   }
 
   if (!pedido) {
     return (
-      <View style={styles.center}>
-        <Text>No se pudo cargar el pedido.</Text>
+      <View style={styles.container}>
+        <GeoFerreHeader />
+        <View style={styles.center}>
+          <Text style={styles.emptyTitle}>No se pudo cargar el pedido.</Text>
+        </View>
       </View>
     );
   }
@@ -112,50 +109,35 @@ export default function PedidoSeguimiento() {
   );
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: COLORS.background }}>
+    <ScrollView style={{ flex: 1, backgroundColor: PALETTE.background }}>
+      <GeoFerreHeader />
       <View style={styles.container}>
-        {/* HEADER */}
         <Text style={styles.title}>Seguimiento del pedido</Text>
 
-        {/* DATOS PEDIDO */}
         <View style={styles.card}>
           <Text style={styles.label}>ID del pedido</Text>
-          <Text style={styles.value}>
-            #{id.slice(0, 8).toUpperCase()}
-          </Text>
+          <Text style={styles.value}>#{id.slice(0, 8).toUpperCase()}</Text>
 
-          <Text style={[styles.label, { marginTop: 12 }]}>
-            Modalidad
-          </Text>
+          <Text style={[styles.label, { marginTop: 12 }]}>Modalidad</Text>
           <Text style={styles.value}>Retiro en tienda</Text>
         </View>
 
-        {/* TIMELINE */}
         <View style={styles.timeline}>
           {STATUS_FLOW.map((step, index) => {
             const isActive = index <= currentStep;
-
             return (
               <View key={step.key} style={styles.step}>
                 <View
                   style={[
                     styles.circle,
-                    {
-                      backgroundColor: isActive
-                        ? COLORS.primary
-                        : "#ddd",
-                    },
+                    { backgroundColor: isActive ? PALETTE.primary : PALETTE.border },
                   ]}
                 />
 
                 <Text
                   style={[
                     styles.stepLabel,
-                    {
-                      color: isActive
-                        ? COLORS.accent
-                        : COLORS.muted,
-                    },
+                    { color: isActive ? PALETTE.primary : PALETTE.textMuted },
                   ]}
                 >
                   {step.label}
@@ -165,11 +147,7 @@ export default function PedidoSeguimiento() {
                   <View
                     style={[
                       styles.line,
-                      {
-                        backgroundColor: isActive
-                          ? COLORS.primary
-                          : "#ddd",
-                      },
+                      { backgroundColor: isActive ? PALETTE.primary : PALETTE.border },
                     ]}
                   />
                 )}
@@ -178,53 +156,29 @@ export default function PedidoSeguimiento() {
           })}
         </View>
 
-        {/* MENSAJE */}
         <View style={styles.card}>
           {pedido.estado === "pagado" && (
             <Text style={styles.info}>
-              Tu pago fue confirmado. La ferretería comenzará a
-              preparar tu pedido.
+              Tu pago fue confirmado. La ferretería comenzará a preparar tu pedido.
             </Text>
           )}
 
           {pedido.estado === "preparando" && (
             <Text style={styles.info}>
-              Tu pedido está siendo preparado. Te avisaremos cuando
-              esté listo para retiro.
+              Tu pedido está siendo preparado. Te avisaremos cuando esté listo para retiro.
             </Text>
           )}
 
           {pedido.estado === "listo_retiro" && (
             <Text style={styles.info}>
-              ✅ Tu pedido ya está listo para ser retirado en la
-              ferretería.
+              ✅ Tu pedido ya está listo para ser retirado en la ferretería.
             </Text>
           )}
 
           {pedido.estado === "retirado" && (
-            <Text style={styles.info}>
-              📦 Pedido retirado. Gracias por comprar en GeoFerre.
-            </Text>
+            <Text style={styles.info}>📦 Pedido retirado. Gracias por comprar en GeoFerre.</Text>
           )}
         </View>
-
-        {/* BOTÓN CONFIRMAR RETIRO */}
-        {pedido.estado === "listo_retiro" && (
-          <View style={{ marginBottom: 40 }}>
-            <TouchableOpacity
-              onPress={confirmarRetiro}
-              style={styles.btn}
-            >
-              <Text style={styles.btnText}>
-                Confirmar retiro
-              </Text>
-            </TouchableOpacity>
-
-            <Text style={styles.hint}>
-              Confirma solo cuando hayas retirado tu pedido
-            </Text>
-          </View>
-        )}
       </View>
     </ScrollView>
   );
@@ -240,31 +194,40 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   container: {
-    padding: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   title: {
     fontSize: 22,
-    fontWeight: "700",
-    color: COLORS.accent,
+    fontWeight: "800",
+    color: PALETTE.text,
     marginBottom: 16,
   },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: PALETTE.base,
     padding: 16,
     borderRadius: 16,
-    marginBottom: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: PALETTE.border,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 5,
   },
   label: {
-    color: COLORS.muted,
-    fontSize: 14,
+    color: PALETTE.textSoft,
+    fontSize: 13,
+    letterSpacing: 0.2,
   },
   value: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.textDark,
+    fontSize: 17,
+    fontWeight: "700",
+    color: PALETTE.text,
   },
   timeline: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   step: {
     position: "relative",
@@ -288,27 +251,33 @@ const styles = StyleSheet.create({
   },
   stepLabel: {
     fontSize: 15,
-    fontWeight: "500",
+    fontWeight: "600",
   },
   info: {
     fontSize: 15,
-    color: COLORS.textDark,
+    color: PALETTE.text,
+    lineHeight: 22,
   },
   btn: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: PALETTE.primary,
     padding: 16,
     borderRadius: 14,
     alignItems: "center",
   },
   btnText: {
-    color: "#fff",
+    color: PALETTE.base,
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   hint: {
     textAlign: "center",
-    color: COLORS.muted,
+    color: PALETTE.textMuted,
     fontSize: 12,
     marginTop: 8,
+  },
+  emptyTitle: {
+    color: PALETTE.text,
+    fontSize: 16,
+    fontWeight: "700",
   },
 });

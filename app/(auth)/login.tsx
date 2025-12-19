@@ -56,7 +56,7 @@ export default function LoginScreen() {
       <View style={styles.card}>
         <View style={styles.header}>
           <Image
-            source={{ uri: "https://bhlsmetxwtqypdyxcmyk.supabase.co/storage/v1/object/sign/img/1faf1d92--4710-bec3-becdee77a301.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jOTYxYjljOS1mOWZmLTQzZDUtYWIzNS1iOWVmYTI4ODhlOWQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWcvMWZhZjFkOTItLTQ3MTAtYmVjMy1iZWNkZWU3N2EzMDEucG5nIiwiaWF0IjoxNzY1ODMzNTI5LCJleHAiOjE3OTczNjk1Mjl9.BNF1ReoPoo-4FAKQAUU8fArupxcR49UdgM-yrW51TKA" }}
+            source={{ uri: "https://bhlsmetxwtqypdyxcmyk.supabase.co/storage/v1/object/sign/img/a.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9jOTYxYjljOS1mOWZmLTQzZDUtYWIzNS1iOWVmYTI4ODhlOWQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWcvYS5wbmciLCJpYXQiOjE3NjYxMDQwNjgsImV4cCI6MTc5NzY0MDA2OH0.0kEmH4lFPCerpWDUm444IuNpcuUl6LXgkmMrjYWAG10"}}
             style={styles.logoImage}
             resizeMode="contain"
           />
@@ -143,8 +143,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logoImage: {
-    width: 180,
-    height: 100,
+    width: 350,
+    height: 150,
     marginBottom: 8,
   },
   subtitle: { color: PALETTE.textSoft, fontSize: 14 },

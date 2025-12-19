@@ -1,6 +1,6 @@
 // components/GeoFerreHeader.tsx
 import Colors from "@/constants/Colors";
-import { SafeAreaView, View, Text, StyleSheet, Image } from "react-native";
+import { Image, SafeAreaView, StyleSheet, Text, View } from "react-native";
 
 const PALETTE = Colors.palette;
 
@@ -12,7 +12,7 @@ export default function GeoFerreHeader() {
         <View style={styles.logoContainer}>
           <Image
             source={require("../assets/images/ferre.png")}
-            style={{ width: 28, height: 28 }}
+            style={{ width: 48, height: 48 }}
             resizeMode="contain"
           />
         </View>
@@ -30,19 +30,23 @@ export default function GeoFerreHeader() {
 const styles = StyleSheet.create({
   safe: {
     backgroundColor: PALETTE.base,
+    width: "100%",
   },
   container: {
-    height: 56,
-    paddingHorizontal: 16,
+    width: "100%",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: 10,
+    backgroundColor: PALETTE.base,
   },
   logoContainer: {
     width: 34,
     height: 34,
     borderRadius: 8,
-    backgroundColor: "#f4eee9",
+    backgroundColor: PALETTE.base,
     alignItems: "center",
     justifyContent: "center",
   },

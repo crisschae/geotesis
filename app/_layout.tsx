@@ -16,7 +16,8 @@ export {
 } from 'expo-router';
 
 export const unstable_settings = {
-  initialRouteName: '(auth)',
+  // Iniciamos en la intro para mostrar animación de entrada
+  initialRouteName: 'intro',
 };
 
 SplashScreen.preventAutoHideAsync();
@@ -56,6 +57,7 @@ function RootLayoutNav() {
             headerShown: false,
           }}
         >
+          <Stack.Screen name="intro" options={{ headerShown: false }} />
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
           

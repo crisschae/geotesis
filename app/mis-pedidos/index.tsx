@@ -1,22 +1,16 @@
+import GeoFerreHeader from "@/components/GeoFerreHeader";
+import Colors from "@/constants/Colors";
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { supabase } from '../../lib/supabaseClient';
-
-const COLORS = {
-  primary: '#8B5A2B',
-  background: '#F5F0E6',
-  card: '#FFFFFF',
-  muted: '#777',
-  text: '#2E2E2E',
-};
 
 interface Pedido {
   id_pedido: string;
@@ -74,6 +68,8 @@ export default function MisPedidosScreen() {
 
   function renderPedido({ item }: { item: Pedido }) {
     const estado = item.estado?.toUpperCase();
+    const estadoStyle = estadoEstilos[estado as EstadoKey] || estadoEstilos.DEFAULT;
+    const fechaTxt = new Date(item.fecha_pedido).toLocaleDateString("es-CL");
 
     return (
       <TouchableOpacity
@@ -85,15 +81,19 @@ export default function MisPedidosScreen() {
           })
         }
       >
-        <Text style={styles.id}>Pedido #{item.id_pedido.slice(0, 8)}</Text>
+        <View style={styles.cardHeader}>
+          <Text style={styles.id}>Pedido #{item.id_pedido.slice(0, 8)}</Text>
+          <View style={[styles.badge, estadoStyle.badge]}>
+            <Text style={[styles.badgeText, estadoStyle.badgeText]}>{estado}</Text>
+          </View>
+        </View>
 
-        <Text style={styles.text}>
-          Fecha: {new Date(item.fecha_pedido).toLocaleDateString()}
-        </Text>
+        <Text style={styles.text}>Fecha: {fechaTxt}</Text>
 
-        <Text style={styles.text}>Estado: {estado}</Text>
-
-        <Text style={styles.total}>Total: ${item.monto_total}</Text>
+        <View style={styles.totalRow}>
+          <Text style={styles.totalLabel}>Total:</Text>
+          <Text style={styles.total}>${item.monto_total}</Text>
+        </View>
 
         <Text style={styles.link}>Ver seguimiento →</Text>
       </TouchableOpacity>
@@ -102,72 +102,165 @@ export default function MisPedidosScreen() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+      <View style={styles.container}>
+        <GeoFerreHeader />
+        <View style={[styles.center, styles.content]}>
+          <ActivityIndicator size="large" color={PALETTE.primary} />
+        </View>
       </View>
     );
   }
 
   if (pedidos.length === 0) {
     return (
-      <View style={styles.center}>
-        <Text>No tienes pedidos registrados</Text>
+      <View style={styles.container}>
+        <GeoFerreHeader />
+        <View style={[styles.center, styles.content]}>
+          <Text style={styles.emptyTitle}>No tienes pedidos registrados</Text>
+          <Text style={styles.emptySub}>Cuando compres algo, aparecerá aquí.</Text>
+        </View>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Mis pedidos</Text>
+      <GeoFerreHeader />
+      <View style={styles.content}>
+        <Text style={styles.title}>Mis pedidos</Text>
 
-      <FlatList
-        data={pedidos}
-        keyExtractor={(item) => item.id_pedido}
-        renderItem={renderPedido}
-        contentContainerStyle={{ paddingBottom: 20 }}
-      />
+        <FlatList
+          data={pedidos}
+          keyExtractor={(item) => item.id_pedido}
+          renderItem={renderPedido}
+          contentContainerStyle={{ paddingBottom: 24 }}
+          ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+        />
+      </View>
     </View>
   );
 }
 
+const PALETTE = Colors.palette;
+type EstadoKey = "PAGADO" | "LISTO" | "RETIRADO" | "PENDIENTE" | "DEFAULT";
+
+const estadoEstilos: Record<EstadoKey, { badge: any; badgeText: any }> = {
+  PAGADO: {
+    badge: { backgroundColor: "rgba(16, 185, 129, 0.14)", borderColor: "#10B981" },
+    badgeText: { color: "#0f9f6e" },
+  },
+  LISTO: {
+    badge: { backgroundColor: "rgba(59, 130, 246, 0.12)", borderColor: "#2563EB" },
+    badgeText: { color: "#1d4ed8" },
+  },
+  RETIRADO: {
+    badge: { backgroundColor: "rgba(107, 114, 128, 0.12)", borderColor: "#6B7280" },
+    badgeText: { color: "#374151" },
+  },
+  PENDIENTE: {
+    badge: { backgroundColor: "rgba(245, 158, 11, 0.14)", borderColor: "#F59E0B" },
+    badgeText: { color: "#b45309" },
+  },
+  DEFAULT: {
+    badge: { backgroundColor: PALETTE.accentLight, borderColor: PALETTE.border },
+    badgeText: { color: PALETTE.textSoft },
+  },
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
-    padding: 16,
+    backgroundColor: PALETTE.background,
+  },
+  content: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
   title: {
     fontSize: 22,
     fontWeight: '700',
-    color: COLORS.text,
+    color: PALETTE.text,
     marginBottom: 12,
   },
   card: {
-    backgroundColor: COLORS.card,
+    backgroundColor: PALETTE.base,
     padding: 16,
-    borderRadius: 14,
-    marginBottom: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: PALETTE.border,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 5,
   },
   id: {
     fontWeight: '600',
     marginBottom: 6,
+    color: PALETTE.text,
+    fontSize: 16,
   },
   text: {
-    color: COLORS.text,
+    color: PALETTE.textSoft,
     marginBottom: 4,
+    fontSize: 13,
+  },
+  totalRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 8,
+  },
+  totalLabel: {
+    color: PALETTE.text,
+    fontWeight: "700",
+    fontSize: 15,
   },
   total: {
-    fontWeight: '700',
-    marginTop: 6,
+    fontWeight: '800',
+    fontSize: 18,
+    color: PALETTE.primary,
   },
   link: {
-    color: COLORS.primary,
-    marginTop: 10,
-    fontWeight: '600',
+    color: PALETTE.primary,
+    marginTop: 12,
+    fontWeight: '700',
+    fontSize: 13,
+    letterSpacing: 0.2,
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  emptyTitle: {
+    color: PALETTE.text,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  emptySub: {
+    color: PALETTE.textSoft,
+    marginTop: 6,
+    fontSize: 13,
+    textAlign: "center",
+  },
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  badge: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderWidth: 1,
+    backgroundColor: PALETTE.accentLight,
+    borderColor: PALETTE.border,
+  },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.3,
   },
 });

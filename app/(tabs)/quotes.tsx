@@ -56,8 +56,11 @@ export default function QuotesScreen() {
         data: { user },
         error: userErr,
       } = await supabase.auth.getUser();
+      // Si no hay sesión, no alertamos: solo mostramos estado vacío
       if (userErr || !user) {
-        throw userErr || new Error("No hay sesión activa");
+        setCotizaciones([]);
+        setClienteId(null);
+        return;
       }
 
       const { data: cliente, error: clienteErr } = await supabase

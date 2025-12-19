@@ -1,8 +1,8 @@
 import Colors from "@/constants/Colors";
+import * as Location from 'expo-location';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import * as Location from 'expo-location';
 
 import { supabase } from '@/lib/supabaseClient';
 import type { TipoCombustible } from '@/lib/types';
