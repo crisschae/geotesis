@@ -1,3 +1,4 @@
+import Colors from "@/constants/Colors";
 import { supabase } from "@/lib/supabaseClient";
 import { useCartStore } from "@/services/cartStore"; // Asegúrate de tener este import
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -13,17 +14,7 @@ import {
   View,
 } from "react-native";
 
-const PALETTE = {
-  base: "#ffffff",
-  primary: "#986132",
-  secondary: "#9C6535",
-  soft: "#f7f1ea",
-  text: "#000000",
-  textSoft: "#4b3323",
-  border: "#edd8c4",
-  accentLight: "rgba(152, 97, 50, 0.10)",
-  accentMedium: "rgba(152, 97, 50, 0.18)",
-};
+const PALETTE = Colors.palette;
 const DARK_BG = PALETTE.base;
 const CARD_BG = PALETTE.soft;
 const ORANGE = PALETTE.primary;
@@ -703,7 +694,7 @@ const styles = StyleSheet.create({
     backgroundColor: ORANGE,
   },
   sortButtonText: {
-    color: "#E5E7EB",
+    color: PALETTE.text,
     fontWeight: "600",
     fontSize: 13,
   },
@@ -735,7 +726,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   optionTitle: {
-    color: "#F9FAFB",
+    color: PALETTE.text,
     fontSize: 15,
     fontWeight: "700",
   },

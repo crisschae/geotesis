@@ -1,29 +1,21 @@
+import Colors from "@/constants/Colors";
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Modal,
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
 
 import { useRouter } from "expo-router";
 
-const PALETTE = {
-  primary: "#986132",
-  secondary: "#9C6535",
-  base: "#ffffff",
-  soft: "#f7f1ea",
-  text: "#000000",
-  textSoft: "#4b3323",
-  border: "#edd8c4",
-};
+const PALETTE = Colors.palette;
 
 import { useUserLocation } from '@/hooks/useUserLocation';
 import type { FerreteriaCercana } from '@/lib/ferreterias';
 import { getProductoMasBaratoPorFerreteria } from '@/lib/productos';
-import { getDistanceUserToFerreteria } from '@/services/googleDistance';
 
 // Distancia Haversine en km (sin tocar ninguna API)
 function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number) {

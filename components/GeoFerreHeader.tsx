@@ -1,12 +1,8 @@
 // components/GeoFerreHeader.tsx
+import Colors from "@/constants/Colors";
 import { SafeAreaView, View, Text, StyleSheet, Image } from "react-native";
 
-const PALETTE = {
-  primary: "#986132",
-  secondary: "#9C6535",
-  base: "#ffffff",
-  muted: "#6b6b6b",
-};
+const PALETTE = Colors.palette;
 
 export default function GeoFerreHeader() {
   return (
@@ -60,7 +56,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 11,
-    color: PALETTE.muted,
+    color: PALETTE.textSoft,
     marginTop: -2,
   },
 });

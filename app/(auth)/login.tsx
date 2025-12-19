@@ -1,3 +1,4 @@
+import Colors from "@/constants/Colors";
 import { supabase } from '@/lib/supabaseClient';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
@@ -114,15 +115,7 @@ export default function LoginScreen() {
   );
 }
 
-const PALETTE = {
-  primary: '#986132',
-  secondary: '#9C6535',
-  base: '#ffffff',
-  soft: '#f7f1ea',
-  text: '#000000',
-  textSoft: '#4b3323',
-  border: '#edd8c4',
-};
+const PALETTE = Colors.palette;
 
 const styles = StyleSheet.create({
   screen: {

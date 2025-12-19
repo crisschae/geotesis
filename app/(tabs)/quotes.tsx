@@ -14,17 +14,9 @@ import {
   View,
 } from "react-native";
 
-const PALETTE = {
-  base: "#ffffff",
-  primary: "#986132",
-  secondary: "#9C6535",
-  soft: "#f7f1ea",
-  text: "#000000",
-  textSoft: "#4b3323",
-  border: "#edd8c4",
-  accentMedium: "rgba(152, 97, 50, 0.18)",
-  accentLight: "rgba(152, 97, 50, 0.10)",
-};
+import Colors from "@/constants/Colors";
+
+const PALETTE = Colors.palette;
 const DARK_BG = PALETTE.base;
 const CARD_BG = PALETTE.soft;
 const ORANGE = PALETTE.primary;

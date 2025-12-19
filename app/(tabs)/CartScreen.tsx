@@ -1,33 +1,24 @@
+import Colors from "@/constants/Colors";
+import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  Alert,
   ActivityIndicator,
-  Modal,
-  TextInput,
+  Alert,
+  Image,
   KeyboardAvoidingView,
+  Modal,
   Platform,
+  ScrollView,
   StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { useRouter } from "expo-router";
-
 import { supabase } from "../../lib/supabaseClient";
 import { useCartStore } from "../../services/cartStore";
 
-/* =======================
-   🎨 PALETA GEOFERRE
-======================= */
-const COLORS = {
-  primary: "#8B5A2B",
-  background: "#F5F0E6",
-  card: "#FFFFFF",
-  textDark: "#2E2E2E",
-  textMuted: "#777",
-};
+const PALETTE = Colors.palette;
 
 export default function CartScreen() {
   const router = useRouter();
@@ -232,12 +223,14 @@ export default function CartScreen() {
               value={cardNumber}
               onChangeText={(t) => setCardNumber(formatCardNumber(t))}
               style={styles.input}
+              placeholderTextColor={PALETTE.text}
             />
             <TextInput
               placeholder="Nombre del titular"
               value={cardName}
               onChangeText={setCardName}
               style={styles.input}
+              placeholderTextColor={PALETTE.text}
             />
 
             <View style={{ flexDirection: "row", gap: 10 }}>
@@ -247,6 +240,7 @@ export default function CartScreen() {
                 value={expDate}
                 onChangeText={(t) => setExpDate(formatExpDate(t))}
                 style={[styles.input, { flex: 1 }]}
+                placeholderTextColor={PALETTE.text}
               />
               <TextInput
                 placeholder="CVC"
@@ -254,13 +248,14 @@ export default function CartScreen() {
                 value={cvc}
                 onChangeText={(t) => setCvc(formatCVC(t))}
                 style={[styles.input, { flex: 1 }]}
+                placeholderTextColor={PALETTE.text}
               />
             </View>
 
             {loading ? (
               <ActivityIndicator
                 size="large"
-                color={COLORS.primary}
+                color={PALETTE.primary}
                 style={{ marginTop: 20 }}
               />
             ) : (
@@ -276,7 +271,7 @@ export default function CartScreen() {
               onPress={() => setShowPagoModal(false)}
               style={{ marginTop: 12 }}
             >
-              <Text style={{ color: COLORS.textMuted }}>Cancelar</Text>
+              <Text style={{ color: PALETTE.textMuted }}>Cancelar</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -289,16 +284,16 @@ export default function CartScreen() {
    🎨 ESTILOS
 ======================= */
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1, backgroundColor: PALETTE.background },
   title: {
     fontSize: 22,
     fontWeight: "700",
     marginBottom: 12,
-    color: COLORS.textDark,
+    color: PALETTE.text,
   },
   card: {
     flexDirection: "row",
-    backgroundColor: COLORS.card,
+    backgroundColor: PALETTE.card,
     padding: 14,
     borderRadius: 16,
     marginBottom: 12,
@@ -309,22 +304,22 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   image: { width: 64, height: 64, borderRadius: 12 },
-  name: { fontWeight: "600", color: COLORS.textDark },
-  price: { color: COLORS.primary, marginTop: 4 },
+  name: { fontWeight: "600", color: PALETTE.text },
+  price: { color: PALETTE.primary, marginTop: 4 },
   footer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     padding: 20,
-    backgroundColor: "#fff",
+    backgroundColor: PALETTE.base,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     elevation: 8,
   },
-  totalLabel: { color: COLORS.textMuted },
+  totalLabel: { color: PALETTE.textMuted },
   total: { fontSize: 22, fontWeight: "700" },
   payButton: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: PALETTE.primary,
     paddingVertical: 14,
     paddingHorizontal: 28,
     borderRadius: 18,
@@ -332,7 +327,7 @@ const styles = StyleSheet.create({
   payText: { color: "#fff", fontSize: 16, fontWeight: "600" },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
+    backgroundColor: "rgba(0, 0, 0, 0.45)",
     justifyContent: "center",
     padding: 20,
   },
@@ -349,15 +344,16 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: PALETTE.border,
     borderRadius: 14,
     padding: 14,
     marginTop: 12,
+    color: PALETTE.text,
   },
   empty: { flex: 1, justifyContent: "center", alignItems: "center" },
   unitPrice: {
   fontSize: 12,
-  color: COLORS.textMuted,
+  color: PALETTE.textMuted,
   marginTop: 2,
   },
 
@@ -371,7 +367,7 @@ const styles = StyleSheet.create({
   qtyControls: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.background,
+    backgroundColor: PALETTE.background,
     borderRadius: 14,
     paddingHorizontal: 6,
   },
@@ -387,7 +383,7 @@ const styles = StyleSheet.create({
   qtyText: {
     fontSize: 20,
     fontWeight: "600",
-    color: COLORS.primary,
+    color: PALETTE.primary,
   },
 
   qtyValue: {
@@ -408,11 +404,11 @@ const styles = StyleSheet.create({
 
   subtotal: {
     fontWeight: "700",
-    color: COLORS.primary,
+    color: PALETTE.primary,
   },
   emptyContainer: {
   flex: 1,
-  backgroundColor: COLORS.background,
+  backgroundColor: PALETTE.background,
   alignItems: "center",
   justifyContent: "center",
   padding: 24,
@@ -435,19 +431,19 @@ emptyIcon: {
 emptyTitle: {
   fontSize: 20,
   fontWeight: "700",
-  color: COLORS.textDark,
+  color: PALETTE.text,
   marginBottom: 6,
 },
 
 emptySubtitle: {
   fontSize: 14,
-  color: COLORS.textMuted,
+  color: PALETTE.textMuted,
   textAlign: "center",
   marginBottom: 20,
 },
 
 emptyButton: {
-  backgroundColor: COLORS.primary,
+  backgroundColor: PALETTE.primary,
   paddingVertical: 14,
   paddingHorizontal: 28,
   borderRadius: 18,

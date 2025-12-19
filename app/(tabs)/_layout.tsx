@@ -2,19 +2,14 @@
 // 1. (tabs)/_layout.tsx - Header para TODAS las tabs
 // ============================================
 import { useClientOnlyValue } from "@/components/useClientOnlyValue";
+import Colors from "@/constants/Colors";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { Tabs } from "expo-router";
 import React from "react";
 import { View } from "react-native";
 import GeoFerreHeader from "@/components/GeoFerreHeader";
 
-const PALETTE = {
-  primary: "#986132",
-  secondary: "#9C6535",
-  base: "#ffffff",
-  border: "#edd8c4",
-  inactive: "#9C6535",
-};
+const PALETTE = Colors.palette;
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>["name"];
@@ -30,7 +25,7 @@ export default function TabLayout() {
         screenOptions={{
           /* ---------- TAB BAR ---------- */
           tabBarActiveTintColor: PALETTE.primary,
-          tabBarInactiveTintColor: PALETTE.inactive,
+          tabBarInactiveTintColor: PALETTE.textMuted,
           tabBarStyle: {
             backgroundColor: PALETTE.base,
             borderTopColor: PALETTE.border,

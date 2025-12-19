@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Pago confirmado</title>
+    <style>
+      body { font-family: Arial, sans-serif; color: #1f2937; background: #f9fafb; }
+      .card { max-width: 520px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+      h1 { color: #0f172a; font-size: 22px; margin: 0 0 12px; }
+      .muted { color: #6b7280; font-size: 14px; margin: 0 0 8px; }
+      .section { margin-top: 16px; }
+      .section-title { font-weight: 600; margin-bottom: 8px; color: #111827; }
+      .pill { display: inline-block; padding: 6px 12px; background: #ecfdf3; color: #065f46; border: 1px solid #bbf7d0; border-radius: 999px; font-size: 12px; font-weight: 600; }
+      ul { padding-left: 18px; margin: 8px 0; }
+      li { margin-bottom: 6px; }
+      .total { font-size: 18px; font-weight: 700; color: #111827; }
+      .footer { margin-top: 20px; color: #6b7280; font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="pill">Pago confirmado</div>
+      <h1>Gracias por tu compra</h1>
+      <p class="muted">Pedido #{{order_id}}</p>
+
+      <div class="section">
+        <div class="section-title">Ferretería</div>
+        <p>{{ferreteria}}</p>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Productos</div>
+        <ul>
+          {{items}}
+        </ul>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Total pagado</div>
+        <p class="total">{{total}}</p>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Siguiente paso</div>
+        <p>La ferretería empezará a preparar tu pedido. Te avisaremos cuando esté listo para retirar.</p>
+      </div>
+
+      <p class="footer">Si tienes dudas, responde este correo y te ayudaremos.</p>
+    </div>
+  </body>
+</html>
+
