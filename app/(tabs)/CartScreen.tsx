@@ -64,17 +64,25 @@ export default function CartScreen() {
     t.replace(/\D/g, "").slice(0, 4).replace(/^(\d{2})(\d{1,2})$/, "$1/$2");
   const formatCVC = (t: string) => t.replace(/\D/g, "").slice(0, 4);
 
+
   /* =======================
-     PAGO (DEMO)
+    PAGO CON TRIGGER DE STOCK AUTOMÁTICO
   ======================= */
   async function ejecutarPago() {
     if (!clienteId) return Alert.alert("Error", "Cliente no identificado");
+    if (cart.length === 0) return Alert.alert("Error", "El carrito está vacío");
+
+    // 🔒 Prevenir doble clic
+    if (loading) return;
 
     try {
       setLoading(true);
+      
+      // Simulación de procesamiento de pago
       await new Promise((r) => setTimeout(r, 1200));
 
-      const { data, error } = await supabase
+      // 1️⃣ Crear el pedido
+      const { data: pedidoData, error: pedidoError } = await supabase
         .from("pedido")
         .insert({
           id_cliente: clienteId,
@@ -88,18 +96,58 @@ export default function CartScreen() {
         .select("id_pedido")
         .single();
 
-      setShowPagoModal(false);
-      clearCart();
-      if (error || !data) {
+      if (pedidoError || !pedidoData) {
         throw new Error("No se pudo crear el pedido");
       }
 
-      router.replace({
-        pathname: "/pedido/[id]",
-        params: { id: data.id_pedido },
-      });
+      const idPedido = pedidoData.id_pedido;
+
+      // 2️⃣ Preparar los detalles del pedido
+      const detalles = cart.map((item) => ({
+        id_pedido: idPedido,
+        id_producto: item.id_producto,
+        cantidad: item.quantity ?? 1,
+        precio_unitario_venta: item.precio,
+        precio_unitario_compra: item.precio,
+      }));
+
+      // 3️⃣ Insertar todos los detalles del pedido
+      // ⚡ El trigger de la BD actualizará el stock automáticamente
+      const { error: detallesError } = await supabase
+        .from("detalle_pedido")
+        .insert(detalles);
+
+      if (detallesError) {
+        console.error("Error al insertar detalles:", detallesError);
+        throw new Error("No se pudieron guardar los productos del pedido");
+      }
+
+      // 4️⃣ Limpiar carrito ANTES de cualquier otra acción
+      clearCart();
+      setShowPagoModal(false);
+
+      // 5️⃣ Mostrar confirmación y redirigir
+      setTimeout(() => {
+        Alert.alert(
+          "¡Pago exitoso!",
+          "Tu pedido ha sido procesado correctamente",
+          [
+            {
+              text: "Ver pedido",
+              onPress: () => {
+                router.replace({
+                  pathname: "/pedido/[id]",
+                  params: { id: idPedido },
+                });
+              },
+            },
+          ]
+        );
+      }, 100);
+
     } catch (e: any) {
-      Alert.alert("Error", e.message);
+      console.error("Error en el proceso de pago:", e);
+      Alert.alert("Error en el pago", e.message || "Ocurrió un error inesperado");
     } finally {
       setLoading(false);
     }

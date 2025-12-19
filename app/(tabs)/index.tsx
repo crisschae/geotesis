@@ -405,7 +405,6 @@ export default function HomeScreen() {
                   {(() => {
                     const fixedUrl = normalizeStorageUrl(item.imagen_url);
 
-                    console.log("DEBUG imagen final:", fixedUrl);
 
                     if (!fixedUrl) {
                       return (
