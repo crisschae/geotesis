@@ -8,7 +8,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '../../lib/supabaseClient'; 
 
 const COLORS = {
   primary: '#8B5A2B',
@@ -44,16 +44,29 @@ export default function MisPedidosScreen() {
         data: { user },
       } = await supabase.auth.getUser();
 
-      if (!user) return;
+      if (!user) {
+        console.log('❌ No hay usuario autenticado');
+        return;
+      }
 
       // 2️⃣ Obtener id_cliente
-      const { data: cliente } = await supabase
+      const { data: cliente, error: clienteError } = await supabase
         .from('cliente_app')
         .select('id_cliente')
         .eq('auth_user_id', user.id)
         .single();
 
-      if (!cliente) return;
+      if (clienteError) {
+        console.log('❌ Error obteniendo cliente:', clienteError);
+        return;
+      }
+
+      if (!cliente) {
+        console.log('❌ No se encontró el cliente');
+        return;
+      }
+
+      console.log('✅ Cliente encontrado:', cliente.id_cliente);
 
       // 3️⃣ Obtener pedidos del cliente
       const { data, error } = await supabase
@@ -62,11 +75,15 @@ export default function MisPedidosScreen() {
         .eq('id_cliente', cliente.id_cliente)
         .order('fecha_pedido', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.log('❌ Error cargando pedidos:', error);
+        throw error;
+      }
 
+      console.log('✅ Pedidos cargados:', data?.length || 0);
       setPedidos(data || []);
     } catch (error) {
-      console.log('Error cargando pedidos:', error);
+      console.log('❌ Error general:', error);
     } finally {
       setLoading(false);
     }
@@ -78,12 +95,11 @@ export default function MisPedidosScreen() {
     return (
       <TouchableOpacity
         style={styles.card}
-        onPress={() =>
-          router.push({
-            pathname: '/pedido/[id]',
-            params: { id: item.id_pedido },
-          })
-        }
+        onPress={() => {
+          console.log('🔍 Navegando a pedido:', item.id_pedido);
+          // ✅ CORRECCIÓN: Ruta correcta - ambos viven en app/
+          router.push(`/pedido/${item.id_pedido}`);
+        }}
       >
         <Text style={styles.id}>Pedido #{item.id_pedido.slice(0, 8)}</Text>
 
@@ -104,6 +120,9 @@ export default function MisPedidosScreen() {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={{ marginTop: 12, color: COLORS.muted }}>
+          Cargando pedidos...
+        </Text>
       </View>
     );
   }
@@ -111,7 +130,12 @@ export default function MisPedidosScreen() {
   if (pedidos.length === 0) {
     return (
       <View style={styles.center}>
-        <Text>No tienes pedidos registrados</Text>
+        <Text style={{ fontSize: 18, marginBottom: 8 }}>
+          📦 No tienes pedidos registrados
+        </Text>
+        <Text style={{ color: COLORS.muted }}>
+          Realiza tu primera compra
+        </Text>
       </View>
     );
   }
@@ -147,18 +171,26 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 14,
     marginBottom: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
   },
   id: {
     fontWeight: '600',
     marginBottom: 6,
+    fontSize: 16,
   },
   text: {
     color: COLORS.text,
     marginBottom: 4,
+    fontSize: 14,
   },
   total: {
     fontWeight: '700',
     marginTop: 6,
+    fontSize: 18,
+    color: COLORS.primary,
   },
   link: {
     color: COLORS.primary,
@@ -169,5 +201,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: COLORS.background,
   },
 });
