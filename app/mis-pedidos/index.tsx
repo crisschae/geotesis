@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '../../lib/supabaseClient'; 
 
 interface Pedido {
   id_pedido: string;
@@ -38,16 +38,29 @@ export default function MisPedidosScreen() {
         data: { user },
       } = await supabase.auth.getUser();
 
-      if (!user) return;
+      if (!user) {
+        console.log('❌ No hay usuario autenticado');
+        return;
+      }
 
       // 2️⃣ Obtener id_cliente
-      const { data: cliente } = await supabase
+      const { data: cliente, error: clienteError } = await supabase
         .from('cliente_app')
         .select('id_cliente')
         .eq('auth_user_id', user.id)
         .single();
 
-      if (!cliente) return;
+      if (clienteError) {
+        console.log('❌ Error obteniendo cliente:', clienteError);
+        return;
+      }
+
+      if (!cliente) {
+        console.log('❌ No se encontró el cliente');
+        return;
+      }
+
+      console.log('✅ Cliente encontrado:', cliente.id_cliente);
 
       // 3️⃣ Obtener pedidos del cliente
       const { data, error } = await supabase
@@ -56,11 +69,15 @@ export default function MisPedidosScreen() {
         .eq('id_cliente', cliente.id_cliente)
         .order('fecha_pedido', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.log('❌ Error cargando pedidos:', error);
+        throw error;
+      }
 
+      console.log('✅ Pedidos cargados:', data?.length || 0);
       setPedidos(data || []);
     } catch (error) {
-      console.log('Error cargando pedidos:', error);
+      console.log('❌ Error general:', error);
     } finally {
       setLoading(false);
     }
@@ -74,12 +91,11 @@ export default function MisPedidosScreen() {
     return (
       <TouchableOpacity
         style={styles.card}
-        onPress={() =>
-          router.push({
-            pathname: '/pedido/[id]',
-            params: { id: item.id_pedido },
-          })
-        }
+        onPress={() => {
+          console.log('🔍 Navegando a pedido:', item.id_pedido);
+          // ✅ CORRECCIÓN: Ruta correcta - ambos viven en app/
+          router.push(`/pedido/${item.id_pedido}`);
+        }}
       >
         <View style={styles.cardHeader}>
           <Text style={styles.id}>Pedido #{item.id_pedido.slice(0, 8)}</Text>
@@ -102,23 +118,24 @@ export default function MisPedidosScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <GeoFerreHeader />
-        <View style={[styles.center, styles.content]}>
-          <ActivityIndicator size="large" color={PALETTE.primary} />
-        </View>
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={PALETTE.primary} />
+        <Text style={{ marginTop: 12, color: PALETTE.textSoft }}>
+          Cargando pedidos...
+        </Text>
       </View>
     );
   }
 
   if (pedidos.length === 0) {
     return (
-      <View style={styles.container}>
-        <GeoFerreHeader />
-        <View style={[styles.center, styles.content]}>
-          <Text style={styles.emptyTitle}>No tienes pedidos registrados</Text>
-          <Text style={styles.emptySub}>Cuando compres algo, aparecerá aquí.</Text>
-        </View>
+      <View style={styles.center}>
+        <Text style={{ fontSize: 18, marginBottom: 8 }}>
+          📦 No tienes pedidos registrados
+        </Text>
+        <Text style={{ color: PALETTE.textSoft }}>
+          Realiza tu primera compra
+        </Text>
       </View>
     );
   }
@@ -185,39 +202,26 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: PALETTE.base,
     padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: PALETTE.border,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 5,
+    borderRadius: 14,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
   },
   id: {
     fontWeight: '600',
     marginBottom: 6,
-    color: PALETTE.text,
     fontSize: 16,
   },
   text: {
     color: PALETTE.textSoft,
     marginBottom: 4,
-    fontSize: 13,
-  },
-  totalRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 8,
-  },
-  totalLabel: {
-    color: PALETTE.text,
-    fontWeight: "700",
-    fontSize: 15,
+    fontSize: 14,
   },
   total: {
-    fontWeight: '800',
+    fontWeight: '700',
+    marginTop: 6,
     fontSize: 18,
     color: PALETTE.primary,
   },
@@ -232,35 +236,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  emptyTitle: {
-    color: PALETTE.text,
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  emptySub: {
-    color: PALETTE.textSoft,
-    marginTop: 6,
-    fontSize: 13,
-    textAlign: "center",
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  badge: {
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderWidth: 1,
-    backgroundColor: PALETTE.accentLight,
-    borderColor: PALETTE.border,
-  },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 0.3,
+    backgroundColor: PALETTE.background,
   },
 });

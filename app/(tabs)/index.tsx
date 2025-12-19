@@ -401,18 +401,10 @@ export default function HomeScreen() {
                     }}
                   >
                       
-                  {(() => {
-                    console.log("DEBUG producto cercano:", {
-                      id_producto: item.id_producto,
-                      imagen_url: item.imagen_url,
-                    });
-                    return null;
-                  })()}
 
                   {(() => {
                     const fixedUrl = normalizeStorageUrl(item.imagen_url);
 
-                    console.log("DEBUG imagen final:", fixedUrl);
 
                     if (!fixedUrl) {
                       return (
