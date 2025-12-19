@@ -1,3 +1,4 @@
+import Colors from "@/constants/Colors";
 import { supabase } from "@/lib/supabaseClient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -6,17 +7,16 @@ import {
   Alert,
   FlatList,
   Image,
+  Keyboard,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
-  Keyboard,
-  TouchableWithoutFeedback
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const PALETTE = {
+const PALETTE_OLD = {
   // === FONDOS ===
   base: "#ffffff",              // Blanco puro para cards y elementos principales
   soft: "#F9FAFB",             // 🔥 Gris muy claro para fondos secundarios
@@ -60,9 +60,10 @@ const PALETTE = {
 };
 
 // Constante para compatibilidad con código existente
+const PALETTE = Colors.palette;
 
-import { getDistanceUserToFerreteria } from "@/services/googleDistance";
 import { useUserLocation } from "@/hooks/useUserLocation";
+import { getDistanceUserToFerreteria } from "@/services/googleDistance";
 
 interface ProductoBusqueda {
   id_producto: string;

@@ -1,3 +1,4 @@
+import Colors from "@/constants/Colors";
 import { supabase } from "@/lib/supabaseClient";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
@@ -15,16 +16,7 @@ import { useCartStore } from "../../services/cartStore"; // 🟩 ZUSTAND
 
 const screenWidth = Dimensions.get("window").width;
 
-const PALETTE = {
-  base: "#ffffff",
-  primary: "#986132",
-  secondary: "#9C6535",
-  soft: "#f7f1ea",
-  text: "#000000",
-  textSoft: "#4b3323",
-  border: "#edd8c4",
-  accentLight: "rgba(152, 97, 50, 0.10)",
-};
+const PALETTE = Colors.palette;
 const ORANGE = PALETTE.primary;
 const DARK_BG = PALETTE.base;
 const CARD_BG = PALETTE.soft;

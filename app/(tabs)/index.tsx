@@ -1,23 +1,24 @@
 // app/(tabs)/index.tsx
 import { FerreteriaSheet } from "@/components/FerreteriaSheet";
 import { MapaFerreterias } from "@/components/MapaFerreterias";
+import Colors from "@/constants/Colors";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import type { FerreteriaCercana } from "@/lib/ferreterias";
 import { getProductoMasBaratoPorFerreteria, getProductosCercanos } from "@/lib/productos";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  PanResponder,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Animated,
+    PanResponder,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
-import { Image } from "expo-image";
 
 
 
@@ -26,20 +27,7 @@ import { Image } from "expo-image";
 
 
 
-const PALETTE = {
-  base: "#ffffff",
-  primary: "#986132",      // fuerte principal
-  secondary: "#9C6535",    // suave
-  soft: "#f7f1ea",         // fondos suaves
-  text: "#000000",
-  textSoft: "#4b3323",
-  border: "#edd8c4",
-  accentMedium: "rgba(152, 97, 50, 0.18)",
-  accentLight: "rgba(152, 97, 50, 0.10)",
-};
-
-
-
+const PALETTE = Colors.palette;
 const ORANGE = PALETTE.primary;
 const DARK_BG = PALETTE.base;
 const CARD_BG = PALETTE.soft;

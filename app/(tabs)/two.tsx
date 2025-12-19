@@ -1,3 +1,4 @@
+import Colors from "@/constants/Colors";
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -10,15 +11,7 @@ import {
 
 import { supabase } from '@/lib/supabaseClient';
 
-const PALETTE = {
-  primary: '#986132',
-  secondary: '#9C6535',
-  base: '#ffffff',
-  soft: '#f7f1ea',
-  text: '#000000',
-  textSoft: '#4b3323',
-  border: '#edd8c4',
-};
+const PALETTE = Colors.palette;
 
 const ORANGE = PALETTE.primary;
 const DARK_BG = PALETTE.base;
